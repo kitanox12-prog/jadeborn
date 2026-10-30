@@ -86,34 +86,9 @@ function setAutoCast(on) {
 function autoCast(h) {
   if (h.dead || h.dash || h.gcd > 0 || has(h, 'stun')) return;
   const eng = engagedFoes(); if (!eng.length) return;
-  const ok = i => G.level >= ABIL[h.key][i].lvl && abilityReady(h, ABIL[h.key][i]) === 'ok';
-  const use = (i, t) => useAbility(h, i, t, true);
   const mine = h === ctrlHero() ? G.target : h.target;
-  if (h.key === 'orhun') {
-    const t = (mine && mine.team === 'foe' && !mine.dead) ? mine : eng.slice().sort((a, b) => dist(a, h) - dist(b, h))[0];
-    if (!t) return;
-    const d = dist(h, t) - t.r - h.r;
-    if (eng.some(f => { const ft = foeTarget(f); return ft && ft !== P.orhun && dist(f, h) < 5 * TILE; }) && ok(1)) return use(1);
-    if (h.hp / h.maxHp < .45 && ok(3)) return use(3);
-    if (d < 2 * TILE) {
-      if (h.res >= 40 && (t.hp / t.maxHp < .3 || h.res >= 75) && ok(4)) return use(4, t);
-      if (foesNear(h, 2.3 * TILE).length >= 2 && ok(2)) return use(2);
-      if (ok(0)) return use(0, t);
-    } else if (d > 3 * TILE && d < 8 * TILE && ok(5)) return use(5, t);
-  } else {
-    const lo = heroes().filter(x => !x.dead).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
-    if (lo && lo.hp / lo.maxHp < .62 && ok(2)) return use(2, lo);
-    if (!P.orhun.dead && eng.some(f => foeTarget(f) === P.orhun) && !P.orhun.buffs.some(b => b.id === 'ward') && ok(4)) return use(4, P.orhun);
-    const close = eng.find(f => foeTarget(f) === h && dist(f, h) < 3 * TILE && !f.def.boss && !has(f, 'root'));
-    if (close && ok(1)) return use(1, close);
-    let t = (mine && mine.team === 'foe' && !mine.dead) ? mine : (P.orhun.target && !P.orhun.target.dead ? P.orhun.target : null);
-    if (!t) t = eng.slice().sort((a, b) => dist(a, h) - dist(b, h))[0];
-    if (!t || dist(h, t) - t.r > 8 * TILE || !lineClear(h.x, h.y - 10, t.x, t.y - 10, 3)) return;
-    const reserve = h.res > h.resMax * .3;
-    if (foesNearPt(t.x, t.y, 2.5 * TILE).length >= 3 && reserve && ok(5)) return use(5, t);
-    if (reserve && t.maxHp > 100 && t.hp / t.maxHp > .3 && !t.buffs.some(b => b.id === 'wither') && ok(3)) return use(3, t);
-    if (h.res > h.resMax * .22 && ok(0)) return use(0, t);
-  }
+  h.target = (mine && mine.team === 'foe' && !mine.dead) ? mine : eng.slice().sort((a, b) => dist(a, h) - dist(b, h))[0];
+  aiCast(h, eng, a => autoOn(h.key, a.id));
 }
 
 /* ---------- Hearts when Handan heals Orhun ---------- */

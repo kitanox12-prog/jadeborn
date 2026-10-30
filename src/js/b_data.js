@@ -1,6 +1,8 @@
 /* ===================== DATA ===================== */
-const XP_NEED = [0, 100, 150, 210, 280, 360, 450, 560, 680, 820, 1000, 1180, 1380, 1600, 1850, Infinity];
-const MAX_LVL = 15;
+const XP_NEED = [0, 100, 150, 210, 280, 360, 450, 560, 680, 820, 1000, 1180, 1380, 1600, 1850];
+while (XP_NEED.length < 50) XP_NEED.push(Math.round(XP_NEED[XP_NEED.length - 1] * 1.115 / 10) * 10);
+XP_NEED.push(Infinity);
+const MAX_LVL = 50;
 const BEACON_BOSS = { b1: 'gnarl', b2: 'witch', b3: 'king', b4: 'wyrm' };
 const RARITY = ['Common', 'Uncommon', 'Rare', 'Epic'];
 const RCOL = ['#d8d8d8', '#5fdc6c', '#5aa6ff', '#c27cff'];
@@ -19,7 +21,7 @@ const HERO = {
 };
 
 /* Ability definitions. range in tiles. use(c,t) returns true when it fired. */
-const ABIL = {
+const SKILL_POOL = {
   orhun: [
     { id: 'sunder', name: 'Sunder', lvl: 1, cost: 0, gain: 15, cd: 3, range: 1.9, tgt: 'foe', icon: { bg: '#6b2a20', fg: '#f0d6b0', s: 'sword' },
       desc: c => `A heavy strike for <b>${Math.round(c.atk * 1.5)}</b> damage. Generates 15 rage and a lot of threat.`,

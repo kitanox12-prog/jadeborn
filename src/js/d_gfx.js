@@ -217,6 +217,8 @@ function heroSprite(key, look, dir, frame) {
     }
     // back weapon when facing up
     if (!front && L.weapon === 'staff') { p('#6b4a2b', 13, 2, 1, 19); p('#7dffc8', 12, 0, 3, 2); }
+    if (!front && (L.weapon === 'axe' || L.weapon === 'spear')) { p('#6b4a2b', 2, 2, 1, 16); p(L.weapon === 'axe' ? '#cfd6e0' : '#e8eef8', 1, 1, 3, L.weapon === 'axe' ? 4 : 2); }
+    if (!front && L.weapon === 'twin') { p('#cfd6e0', 2, 8, 1, 8); p('#cfd6e0', 13, 8, 1, 8); }
     if (!front && L.weapon === 'sword') { p('#cfd6e0', 2, 6 + (atk ? -3 : 0), 1, 10); p('#e0a64e', 1, 15 + (atk ? -3 : 0), 3, 1); }
     // torso
     if (L.robe) { p(L.shirt, 4, 10, 8, 7); p(L.shirt, 3, 16, 10, 5); p(L.trim, 3, 20, 10, 1); p(L.shirtHi, 5, 10, 2, 6); }
@@ -260,6 +262,12 @@ function heroSprite(key, look, dir, frame) {
     }
     // front weapons
     if (front && L.weapon === 'sword') { const y0 = atk ? 3 : 7; p('#cfd6e0', 1, y0, 1, 9); p('#ffffff', 1, y0, 1, 2); p('#e0a64e', 0, y0 + 9, 3, 1); p('#5a3a22', 1, y0 + 10, 1, 2); }
+    if (front && L.weapon === 'axe') { const y0 = atk ? 1 : 5; p('#6b4a2b', 1, y0, 1, 13); p('#cfd6e0', -1, y0, 3, 4); p('#ffffff', -1, y0, 1, 2); p('#9aa0aa', 2, y0 + 1, 1, 2); }
+    if (front && L.weapon === 'spear') { const y0 = atk ? -1 : 2; p('#6b4a2b', 1, y0 + 2, 1, 18); p('#e8eef8', 1, y0, 1, 3); p('#e8eef8', 0, y0 + 1, 3, 1); p(L.trim2 || '#c9573a', 1, y0 + 3, 1, 1); }
+    if (front && L.weapon === 'twin') { const y0 = atk ? 4 : 8; p('#cfd6e0', 1, y0, 1, 7); p('#e0a64e', 0, y0 + 7, 3, 1); p('#cfd6e0', 14, y0 + (atk ? 3 : 0), 1, 7); p('#e0a64e', 13, y0 + 7 + (atk ? 3 : 0), 3, 1); }
+    if (front && L.weapon === 'orb') { const fy = atk ? 6 : 9; p('#1a5a6a', 13, fy, 3, 3); p('#9fe8ff', 14, fy, 2, 2); p('#ffffff', 14, fy, 1, 1); }
+    if (front && L.weapon === 'wand') { p('#6b4a2b', 13, 12 + (atk ? -3 : 0), 1, 5); p('#c9ffe6', 13, 11 + (atk ? -3 : 0), 1, 1); }
+    if (front && L.weapon === 'tome') { p('#5a2a6a', 12, 12, 4, 5); p('#f0e6d0', 13, 13, 2, 3); p('#d8b8ff', 14, 12, 1, 1); }
     if (front && L.offhand === 'buckler') { p('#e0a64e', 12, 12, 4, 4); p('#4a3020', 13, 13, 2, 2); p('#ffe7b0', 13, 12, 1, 1); }
     if (front && L.weapon === 'staff') { p('#6b4a2b', 13, 3 + (atk ? -2 : 0), 1, 19); p('#2b7d5f', 12, 1 + (atk ? -2 : 0), 3, 3); p('#7dffc8', 13, 1 + (atk ? -2 : 0), 1, 1); }
   } else {
@@ -289,6 +297,12 @@ function heroSprite(key, look, dir, frame) {
     const ax = atk ? 11 : 8 + (step > 0 ? 1 : step < 0 ? -1 : 0);
     p(L.shirt, ax, 10, 2, 5); p(L.skin, ax + (atk ? 1 : 0), 15, 2, 1);
     if (L.weapon === 'sword') { if (atk) { p('#cfd6e0', 13, 13, 6, 1); p('#ffffff', 17, 13, 2, 1); p('#e0a64e', 12, 12, 1, 3); } else { p('#cfd6e0', ax + 1, 6, 1, 9); p('#e0a64e', ax, 15, 3, 1); } }
+    if (L.weapon === 'axe') { if (atk) { p('#6b4a2b', 12, 12, 7, 1); p('#cfd6e0', 17, 9, 3, 4); } else { p('#6b4a2b', ax + 1, 3, 1, 13); p('#cfd6e0', ax + 1, 2, 3, 4); } }
+    if (L.weapon === 'spear') { if (atk) { p('#6b4a2b', 9, 13, 10, 1); p('#e8eef8', 19, 12, 2, 3); } else { p('#6b4a2b', ax + 1, 0, 1, 20); p('#e8eef8', ax + 1, -2, 1, 2); } }
+    if (L.weapon === 'twin') { if (atk) { p('#cfd6e0', 13, 12, 5, 1); p('#cfd6e0', 13, 15, 5, 1); } else { p('#cfd6e0', ax + 1, 8, 1, 7); } }
+    if (L.weapon === 'orb') { p('#9fe8ff', atk ? 15 : ax + 2, atk ? 9 : 11, 3, 3); }
+    if (L.weapon === 'wand') { p('#6b4a2b', atk ? 13 : ax + 1, atk ? 12 : 13, atk ? 4 : 1, atk ? 1 : 4); p('#c9ffe6', atk ? 17 : ax + 1, atk ? 12 : 12, 1, 1); }
+    if (L.weapon === 'tome') { p('#5a2a6a', 5, 12, 3, 4); p('#f0e6d0', 6, 13, 1, 2); }
     if (L.weapon === 'staff') { const sx = atk ? 13 : ax + 1; p('#6b4a2b', sx, 2, 1, 20); p('#2b7d5f', sx - 1, 0, 3, 3); p('#7dffc8', sx, 0, 1, 1); }
   }
   // outline pass
@@ -543,6 +557,18 @@ function drawIcon(c, spec) {
     case 'fire': g.beginPath(); g.moveTo(24, 6); g.quadraticCurveTo(38, 22, 32, 36); g.quadraticCurveTo(24, 44, 16, 36); g.quadraticCurveTo(10, 22, 24, 6); g.fill(); g.fillStyle = '#fff2c0'; g.beginPath(); g.moveTo(24, 20); g.quadraticCurveTo(30, 30, 24, 38); g.quadraticCurveTo(18, 30, 24, 20); g.fill(); break;
     case 'roll': g.beginPath(); g.arc(22, 24, 11, .6, 5.4); g.stroke(); L([30, 12, 33, 19, 26, 20]); L([8, 34, 16, 34]); L([6, 28, 12, 28]); break;
     case 'blink': g.globalAlpha = .4; g.beginPath(); g.arc(14, 26, 6, 0, 7); g.stroke(); g.globalAlpha = 1; g.beginPath(); g.moveTo(34, 12); g.lineTo(40, 24); g.lineTo(34, 36); g.lineTo(28, 24); g.closePath(); g.fill(); L([16, 26, 26, 24]); break;
+    case 'wave': g.beginPath(); g.arc(16, 24, 14, -1.1, 1.1); g.stroke(); g.globalAlpha = .5; g.beginPath(); g.arc(24, 24, 14, -1.1, 1.1); g.stroke(); g.globalAlpha = .25; g.beginPath(); g.arc(32, 24, 14, -1.1, 1.1); g.stroke(); g.globalAlpha = 1; break;
+    case 'frenzy': g.beginPath(); g.moveTo(24, 6); g.quadraticCurveTo(36, 22, 30, 34); g.quadraticCurveTo(24, 42, 18, 34); g.quadraticCurveTo(12, 22, 24, 6); g.fill(); g.fillStyle = '#2a0808'; g.fillRect(19, 22, 3, 3); g.fillRect(26, 22, 3, 3); break;
+    case 'oath': g.beginPath(); g.moveTo(24, 8); g.lineTo(36, 13); g.lineTo(34, 28); g.lineTo(24, 38); g.lineTo(14, 28); g.lineTo(12, 13); g.closePath(); g.stroke(); g.beginPath(); g.moveTo(24, 30); g.bezierCurveTo(16, 24, 18, 16, 24, 21); g.bezierCurveTo(30, 16, 32, 24, 24, 30); g.fill(); break;
+    case 'quake': L([6, 36, 42, 36]); L([24, 36, 20, 28, 26, 22, 22, 14]); L([14, 36, 10, 30]); L([34, 36, 38, 30]); g.beginPath(); g.arc(24, 10, 4, 0, 7); g.fill(); break;
+    case 'dance': for (let i = 0; i < 3; i++) L([10 + i * 10, 38, 18 + i * 10, 10]); break;
+    case 'banner': L([14, 40, 14, 8]); g.beginPath(); g.moveTo(15, 9); g.lineTo(36, 13); g.lineTo(30, 19); g.lineTo(36, 25); g.lineTo(15, 25); g.closePath(); g.fill(); break;
+    case 'barrage': for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(14 + i * 7, 34 - i * 7, 3.5, 0, 7); g.fill(); } break;
+    case 'renew': g.beginPath(); g.arc(24, 24, 13, .4, 5.6); g.stroke(); L([33, 12, 37, 17, 31, 19]); g.fillRect(21, 16, 6, 16); g.fillRect(16, 21, 16, 6); break;
+    case 'chain': L([12, 8, 22, 20, 16, 24, 30, 40]); L([30, 40, 34, 30]); break;
+    case 'nova': for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; L([24, 24, 24 + Math.cos(a) * 16, 24 + Math.sin(a) * 16]); } g.beginPath(); g.arc(24, 24, 5, 0, 7); g.fill(); break;
+    case 'haste': g.beginPath(); g.arc(24, 24, 14, 0, 7); g.stroke(); L([24, 24, 24, 14]); L([24, 24, 32, 28]); L([6, 12, 2, 12]); L([6, 20, 0, 20]); break;
+    case 'meteor': g.beginPath(); g.arc(30, 30, 9, 0, 7); g.fill(); g.globalAlpha = .5; L([24, 24, 8, 8]); L([28, 20, 16, 6]); L([20, 28, 6, 16]); g.globalAlpha = 1; break;
     case 'potion': g.fillStyle = '#c9c0b0'; g.fillRect(20, 8, 8, 8); g.fillStyle = '#d4503f'; g.beginPath(); g.arc(24, 30, 12, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.arc(20, 26, 3, 0, 7); g.fill(); break;
   }
   g.restore();
@@ -555,7 +581,13 @@ function drawItemIcon(c, it) {
   const col = RCOL[it.rarity || 0];
   const k = it.kind || it.slot;
   g.lineCap = 'round'; g.lineJoin = 'round';
-  if (k === 'weapon' && it.owner === 'orhun') { g.strokeStyle = '#cfd6e0'; g.lineWidth = 3; g.beginPath(); g.moveTo(8, 28); g.lineTo(28, 8); g.stroke(); g.strokeStyle = col; g.beginPath(); g.moveTo(6, 22); g.lineTo(14, 30); g.stroke(); g.strokeStyle = '#5a3a22'; g.beginPath(); g.moveTo(8, 28); g.lineTo(5, 31); g.stroke(); }
+  if (k === 'weapon' && it.wtype === 'greataxe') { g.strokeStyle = '#7a5a3a'; g.lineWidth = 3; g.beginPath(); g.moveTo(8, 32); g.lineTo(24, 6); g.stroke(); g.fillStyle = '#cfd6e0'; g.beginPath(); g.moveTo(20, 4); g.quadraticCurveTo(34, 8, 30, 20); g.lineTo(22, 14); g.closePath(); g.fill(); g.fillStyle = col; g.fillRect(16, 14, 4, 3); }
+  else if (k === 'weapon' && it.wtype === 'spear') { g.strokeStyle = '#7a5a3a'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(6, 32); g.lineTo(28, 8); g.stroke(); g.fillStyle = '#e8eef8'; g.beginPath(); g.moveTo(32, 3); g.lineTo(26, 8); g.lineTo(30, 12); g.closePath(); g.fill(); g.fillStyle = col; g.fillRect(24, 11, 3, 3); }
+  else if (k === 'weapon' && it.wtype === 'twinblades') { g.strokeStyle = '#cfd6e0'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(6, 28); g.lineTo(22, 6); g.moveTo(30, 28); g.lineTo(14, 6); g.stroke(); g.strokeStyle = col; g.beginPath(); g.moveTo(4, 24); g.lineTo(10, 30); g.moveTo(32, 24); g.lineTo(26, 30); g.stroke(); }
+  else if (k === 'weapon' && it.wtype === 'orb') { g.fillStyle = '#3a2a1a'; g.fillRect(12, 26, 12, 4); g.fillStyle = col; g.beginPath(); g.arc(18, 17, 9, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect(13, 11, 4, 4); }
+  else if (k === 'weapon' && it.wtype === 'wand') { g.strokeStyle = '#7a5a3a'; g.lineWidth = 3; g.beginPath(); g.moveTo(10, 30); g.lineTo(24, 12); g.stroke(); g.fillStyle = col; g.beginPath(); g.arc(25, 10, 4, 0, 7); g.fill(); }
+  else if (k === 'weapon' && it.wtype === 'tome') { g.fillStyle = '#4a2a5a'; g.fillRect(7, 8, 22, 22); g.fillStyle = '#f0e6d0'; g.fillRect(9, 10, 18, 2); g.fillStyle = col; g.beginPath(); g.arc(18, 20, 4, 0, 7); g.fill(); }
+  else if (k === 'weapon' && it.owner === 'orhun') { g.strokeStyle = '#cfd6e0'; g.lineWidth = 3; g.beginPath(); g.moveTo(8, 28); g.lineTo(28, 8); g.stroke(); g.strokeStyle = col; g.beginPath(); g.moveTo(6, 22); g.lineTo(14, 30); g.stroke(); g.strokeStyle = '#5a3a22'; g.beginPath(); g.moveTo(8, 28); g.lineTo(5, 31); g.stroke(); }
   else if (k === 'weapon') { g.strokeStyle = '#7a5a3a'; g.lineWidth = 3; g.beginPath(); g.moveTo(10, 32); g.lineTo(24, 10); g.stroke(); g.fillStyle = col; g.beginPath(); g.arc(26, 8, 5, 0, 7); g.fill(); }
   else if (k === 'armor') { g.fillStyle = it.owner === 'orhun' ? '#6a707c' : '#2a2a38'; g.beginPath(); g.moveTo(8, 8); g.lineTo(14, 6); g.lineTo(22, 6); g.lineTo(28, 8); g.lineTo(30, 16); g.lineTo(25, 16); g.lineTo(25, 30); g.lineTo(11, 30); g.lineTo(11, 16); g.lineTo(6, 16); g.closePath(); g.fill(); g.fillStyle = col; g.fillRect(11, 22, 14, 2); }
   else if (k === 'trinket') { g.strokeStyle = '#d9b860'; g.lineWidth = 2; g.beginPath(); g.moveTo(10, 6); g.quadraticCurveTo(18, 18, 26, 6); g.stroke(); g.fillStyle = col; g.beginPath(); g.arc(18, 22, 6, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(15, 19, 2, 2); }

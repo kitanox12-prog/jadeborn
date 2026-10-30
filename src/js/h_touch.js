@@ -93,6 +93,7 @@
     <button class="tbtn" id="tTarget" aria-label="Next target">${svg('<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>')}</button>
     <button class="tbtn" id="tLantern" aria-label="Lanternburst"><i></i>${svg('<path d="M9 3h6M10 3v2M14 3v2M7 7h10l-1 11H8L7 7zM9 21h6"/><path d="M12 10c1.5 1.6 1.5 3.6 0 5c-1.5-1.4-1.5-3.4 0-5z"/>')}</button>`;
   hud.appendChild(util);
+  const lanternBtn = $('tLantern');
   const use = document.createElement('button'); use.id = 'tUse'; use.hidden = true; use.textContent = 'Talk'; hud.appendChild(use);
   const dwrap = document.createElement('div'); dwrap.id = 'tDodge'; hud.appendChild(dwrap);
   const hint = document.createElement('div'); hint.id = 'joyHint'; hint.textContent = 'Move'; hud.appendChild(hint);
@@ -116,7 +117,7 @@
   tap($('tTarget'), () => { if (!G.inCombat) { mountToggle(); return; } cycleTarget(); if (G.target) G.autoAtk = true; sfx('ui'); });
   const tgtSvg = $('tTarget').innerHTML, mountSvg = svg('<path d="M4 15c2-4 6-6 10-6l3-3 1 4c2 1 3 3 3 5"/><path d="M6 15v4M10 15v4M15 15v4M19 15v3"/><circle cx="16" cy="8" r=".5"/>');
   let tgtMode = 'target';
-  tap($('tLantern'), () => lanternburst());
+  tap(lanternBtn, () => lanternburst());
   tap(use, () => interact());
   more.onclick = ev => { ev.stopPropagation(); pop.hidden = !pop.hidden; $('mSound').textContent = 'Sound: ' + (SND.on ? 'on' : 'off'); };
   $('mSound').onclick = () => { SND.init(); const on = SND.toggle(); $('mSound').textContent = 'Sound: ' + (on ? 'on' : 'off'); $('bSound').textContent = 'Sound: ' + (on ? 'on' : 'off'); };
@@ -152,7 +153,7 @@
     _bab();
     const old = util.querySelector('.slot'); if (old) old.remove();
     dwrap.innerHTML = '';
-    $('bar').insertBefore($('tLantern'), $('bar').firstChild);
+    $('bar').insertBefore(lanternBtn, $('bar').firstChild);
     for (const s of slotEls) {
       const el = s.el; el.dataset.pos = s.pot ? 'pot' : String(s.i);
       if (s.pot) util.appendChild(el);
@@ -181,7 +182,7 @@
   let lastUse = '';
   updateHUD = function (dt) {
     _uh(dt);
-    const gp = Math.floor(G.gauge), lb = $('tLantern');
+    const gp = Math.floor(G.gauge), lb = lanternBtn;
     lb.querySelector('i').style.height = gp + '%'; lb.classList.toggle('full', gp >= 100);
     let label = '';
     if (!G.dialog && G.started) {

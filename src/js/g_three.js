@@ -405,8 +405,18 @@ function look3D(key) {
   const L = NPCS[key].look;
   return { skin: L.skin, hair: L.hair, hairStyle: L.hood ? 'hood' : (key === 'sela' || key === 'ayla' ? 'long' : 'short'), hood: L.hood, beard: L.beard ? 'full' : null, shirt: L.robe, pants: L.robe, boots: '#2a1c12', robe: true, trim: '#00000000', belt: L.apron ? '#3a2a1a' : '#2a2016', buckle: '#9a7a3a', weapon: L.staff ? 'staff' : null, apron: L.apron, ghost: L.ghost, smile: 'soft' };
 }
-function makeHumanoid(key) {
+function heroGear3D(h) {
+  const eq = G.equip[h.key] || {}, wt = heroWeapon(h), ar = eq.armor, tr = eq.trinket;
+  return { wt, tint: ar && ar.tint, ar: ar ? ar.rarity : -1, tr: tr ? tr.rarity : -1, sig: wt + (ar && ar.tint || '') + (ar ? ar.rarity : '') + (tr ? tr.rarity : '') };
+}
+function makeHumanoid(key, gear) {
   const L = look3D(key);
+  if (gear) {
+    L.weapon = gear.wt; L.offhand = gear.wt === 'sword' ? 'buckler' : null;
+    if (gear.tint) { L.shirt = gear.tint; if (key === 'handan') L.pants = gear.tint; }
+    if (key === 'orhun' && gear.ar >= 0) L.pauldron = ['#7a808c', '#7a9480', '#7a90c0', '#b090d0'][gear.ar];
+    if (key === 'handan' && gear.ar >= 0) L.trim = ['#2aa878', '#3aaa5a', '#4a8ae0', '#b07ae8'][gear.ar];
+  }
   const ghost = L.ghost;
   const mo = ghost ? { transparent: true, opacity: .62, emissive: 0x3a8a70, emissiveIntensity: .7 } : {};
   const M = c => uMat(c, Object.assign({ roughness: .8 }, mo));
@@ -469,6 +479,41 @@ function makeHumanoid(key) {
     glow(0x46ffb0, .45, body, 1.02).position.z = .18;
   }
   let weapon = null, tip = null;
+  const rcol = gear && gear.tr >= 0 ? [0xd8d8d8, 0x5fdc6c, 0x5aa6ff, 0xc27cff][gear.tr] : null;
+  if (rcol !== null) { mesh(gSph(.035, 8, 6), uMat('#ffffff', { emissive: rcol, emissiveIntensity: 1.6 }), .12, .64, .17, body); glow(rcol, .35, body, .64).position.set(.12, .64, .2); }
+  const steelM = () => uMat('#d8dee8', { metalness: .9, roughness: .22 }), woodM = () => uMat('#5a3a22', { roughness: .7 });
+  if (L.weapon === 'greataxe') {
+    weapon = new THREE.Group(); weapon.position.y = -.42; armR.add(weapon);
+    mesh(gCyl(.025, .03, 1.15, 6), woodM(), 0, .35, 0, weapon);
+    const bl = mesh(gBox(.06, .3, .36), steelM(), 0, .82, .1, weapon); bl.scale.z = 1; mesh(gBox(.05, .18, .2), steelM(), 0, .82, -.12, weapon);
+    weapon.rotation.x = 1.0;
+  }
+  if (L.weapon === 'spear') {
+    weapon = new THREE.Group(); weapon.position.y = -.42; armR.add(weapon);
+    mesh(gCyl(.02, .022, 1.9, 6), woodM(), 0, .45, 0, weapon);
+    mesh(gCone(.05, .26, 6), steelM(), 0, 1.53, 0, weapon); mesh(gTor(.03, .012, 5, 10), uMat('#c9573a'), 0, 1.36, 0, weapon).rotation.x = Math.PI / 2;
+    weapon.rotation.x = .6;
+  }
+  if (L.weapon === 'twinblades') {
+    for (const arm of [armR, armL]) { const w2 = new THREE.Group(); w2.position.y = -.42; arm.add(w2); mesh(gBox(.04, .5, .012), steelM(), 0, .3, 0, w2); mesh(gBox(.16, .03, .04), uMat('#e0a64e', { metalness: .8, roughness: .3 }), 0, .05, 0, w2); w2.rotation.x = 1.15; if (arm === armR) weapon = w2; }
+  }
+  if (L.weapon === 'orb') {
+    weapon = new THREE.Group(); weapon.position.set(0, -.5, .18); armR.add(weapon);
+    tip = mesh(gSph(.09, 14, 10), uMat('#9fe8ff', { emissive: 0x4ac8ff, emissiveIntensity: 1.4, roughness: .15, metalness: .2 }), 0, 0, 0, weapon); glow(0x6ad8ff, .9, weapon, 0);
+    for (let k = 0; k < 3; k++) mesh(gTor(.13, .006, 4, 20), uMat('#cfefff', { emissive: 0x4ac8ff, emissiveIntensity: .8 }), 0, 0, 0, weapon).rotation.set(k * 1.1, k * .7, 0);
+  }
+  if (L.weapon === 'wand') {
+    weapon = new THREE.Group(); weapon.position.y = -.42; armR.add(weapon);
+    mesh(gCyl(.014, .018, .42, 6), woodM(), 0, .15, 0, weapon); tip = mesh(new THREE.OctahedronGeometry(.04, 0), uMat('#c9ffe6', { emissive: 0x6affc0, emissiveIntensity: 1.6 }), 0, .38, 0, weapon); glow(0x6affc0, .5, weapon, .38);
+    weapon.rotation.x = 1.1;
+  }
+  if (L.weapon === 'tome') {
+    const bk = new THREE.Group(); bk.position.set(0, -.44, .12); armL.add(bk);
+    mesh(gBox(.2, .05, .27), uMat('#4a2a5a', { roughness: .6 }), 0, 0, 0, bk); mesh(gBox(.18, .052, .24), uMat('#f0e6d0'), 0, .005, .01, bk);
+    mesh(gBox(.05, .055, .05), uMat('#d8b8ff', { emissive: 0xa070ff, emissiveIntensity: 1.5 }), 0, .03, 0, bk); glow(0xb08aff, .7, bk, .1);
+    weapon = new THREE.Group(); weapon.position.y = -.42; armR.add(weapon);
+    tip = mesh(gSph(.03, 8, 6), uMat('#d8b8ff', { emissive: 0xa070ff, emissiveIntensity: 2 }), 0, .02, .05, weapon);
+  }
   if (L.weapon === 'sword') {
     weapon = new THREE.Group(); weapon.position.y = -.42; armR.add(weapon);
     const steel = uMat('#d8dee8', { metalness: .9, roughness: .22 });
@@ -494,7 +539,7 @@ function makeHumanoid(key) {
   }
   if (ghost) root.add(glow(0x8ad8c0, 2.4, null, 1.0, .35));
   root.traverse(o => { if (o.isMesh && ghost) o.castShadow = false; });
-  return { g: root, body, hipL, hipR, armL, armR, head, weapon, tip, kind: 'human', key, yaw: 0, h: 1.75 };
+  return { g: root, body, hipL, hipR, armL, armR, head, weapon, tip, kind: 'human', key, yaw: 0, h: 1.75, wt: L.weapon, sig: gear ? gear.sig : '' };
 }
 function makeFox3D() {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
@@ -726,12 +771,20 @@ function animHuman(m, e, dt, t) {
   let aL = -sw * .5, aR = sw * .5, aRz = 0;
   if (e.swingT > 0) {
     const u = 1 - e.swingT / (e.key === 'handan' ? .3 : .25);
-    if (e.key === 'handan' || (m.weapon && m.tip)) { aR = -1.6 * Math.sin(u * Math.PI); }
+    const k = e.swingKind || m.wt;
+    if (k === 'greataxe') { aR = aL = -2.8 + u * 3.4; m.body.rotation.y = 0; m.body.rotation.x = Math.sin(u * Math.PI) * .2; }
+    else if (k === 'spear') { aR = -1.5; m.armR.position.z = Math.sin(u * Math.PI) * .25; m.body.rotation.y = -Math.sin(u * Math.PI) * .2; }
+    else if (k === 'twinblades') { const alt = (e.swingN || 0) % 2; if (alt) { aL = -2.0 + u * 2.6; } else { aR = -2.0 + u * 2.6; } m.body.rotation.y = (alt ? -1 : 1) * Math.sin(u * Math.PI) * .3; }
+    else if (k === 'orb') { aR = -1.3 * Math.sin(u * Math.PI); aL = -.6 * Math.sin(u * Math.PI); }
+    else if (k === 'wand') { aR = -1.9 * Math.sin(u * Math.PI); aRz = .3 * Math.sin(u * Math.PI); }
+    else if (k === 'tome') { aR = -1.4 * Math.sin(u * Math.PI); aL = -.9; }
+    else if (e.key === 'handan' || (m.weapon && m.tip)) { aR = -1.6 * Math.sin(u * Math.PI); }
     else { aR = -2.2 + u * 3.0; aRz = -.4; m.body.rotation.y = Math.sin(u * Math.PI) * .25; }
-  } else m.body.rotation.y = 0;
+  } else { m.body.rotation.y = 0; if (m.armR.position.z) m.armR.position.z = 0; if (m.wt === 'tome') aL = -.9; }
   if (e.dash) { aR = -1.2; aL = -1.2; m.body.rotation.x = .35; }
   m.armL.rotation.x = aL; m.armR.rotation.x = aR; m.armR.rotation.z = aRz;
-  if (m.tip && m.weapon) m.weapon.rotation.x = -aR * .8;
+  if (m.tip && m.weapon && m.wt === 'staff') m.weapon.rotation.x = -aR * .8;
+  if (m.wt === 'orb' && m.weapon) { m.weapon.position.y = -.5 + Math.sin(t * 2.4) * .04; m.weapon.rotation.y += dt * 2; }
   m.head.rotation.y = Math.sin(t * .7 + (e.x || 0)) * .08;
 }
 function animFoe(m, f, dt, t) {
@@ -863,7 +916,9 @@ function render(dt) {
   }
   // units
   for (const h of heroes()) {
-    const m = regGet(h, () => makeHumanoid(h.key)); placeEnt(m, h); animHuman(m, h, dt, t);
+    const gear = heroGear3D(h);
+    { const old = S3.ents.get(h); if (old && old.sig !== gear.sig) { if (old.g.parent) old.g.parent.remove(old.g); S3.ents.delete(h); } }
+    const m = regGet(h, () => makeHumanoid(h.key, gear)); placeEnt(m, h); animHuman(m, h, dt, t);
     m.g.visible = !(h.key === 'handan' && h.iframes > 0 && Math.floor(t * 28) % 2);
     if (h.key === 'orhun' && h.iframes > 0 && h.dash) { m.body.rotation.x = (1 - h.iframes / DODGE.orhun.ifr) * Math.PI * 2; m.body.position.y = .35; }
   }
@@ -927,10 +982,10 @@ function drawFx3D(R, dt, t, lightsList) {
     const u = tl.t / tl.dur; m.prog.scale.set(Math.max(.01, u), Math.max(.01, u), 1);
   }
   for (const p of G.pools) {
-    const m = fxMesh(p, () => { const g = new THREE.Group(); const d = flat(new THREE.Mesh(new THREE.CircleGeometry(1, 40), ringMat(0x46c850, .35))); const r2 = flat(new THREE.Mesh(new THREE.RingGeometry(.9, 1, 40), ringMat(0x9aff8a, .6))); g.add(d, r2); g.add(glow(0x7aff6a, 2, null, .3, .35)); return { g, d, mats: [d.material, r2.material] }; });
+    const m = fxMesh(p, () => { const g = new THREE.Group(); const d = flat(new THREE.Mesh(new THREE.CircleGeometry(1, 40), ringMat(p.ally ? 0xffd27a : 0x46c850, .35))); const r2 = flat(new THREE.Mesh(new THREE.RingGeometry(.9, 1, 40), ringMat(p.ally ? 0xffe6a8 : 0x9aff8a, .6))); g.add(d, r2); g.add(glow(0x7aff6a, 2, null, .3, .35)); return { g, d, mats: [d.material, r2.material] }; });
     const r = p.r / TILE, a = Math.min(1, p.t * 3, (p.dur - p.t) * 2);
     m.g.position.set(p.x / TILE, .05, p.y / TILE); m.g.scale.set(r, 1, r); m.d.material.opacity = .35 * a;
-    lightsList.push({ x: p.x / TILE, y: .6, z: p.y / TILE, col: 0x5aff6a, r: 3.5, i: .7 * a });
+    lightsList.push({ x: p.x / TILE, y: .6, z: p.y / TILE, col: p.ally ? 0xffd27a : 0x5aff6a, r: 3.5, i: .7 * a });
   }
   // target rings
   const ringFor = (key, e, col) => {
@@ -961,7 +1016,16 @@ function drawFx3D(R, dt, t, lightsList) {
   }
   // rings / slashes / vines
   for (const f of G.fx) {
+    if (f.t < 0 && f.k !== 'heart') { const m0 = S3.ents.get(f); if (m0) m0.g.visible = false; continue; }
     const u = f.t / f.dur;
+    if (f.k === 'zap') {
+      const m = fxMesh(f, () => { const geo2 = new THREE.BufferGeometry(); geo2.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8 * 3), 3)); const mat = new THREE.LineBasicMaterial({ color: new THREE.Color(f.col), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); const ln = new THREE.Line(geo2, mat); const g = new THREE.Group(); g.add(ln); return { g, ln, mats: [mat] }; });
+      const pts = zapPts(f), arr = m.ln.geometry.attributes.position.array;
+      pts.forEach(([x, y], i) => { arr[i * 3] = x / TILE; arr[i * 3 + 1] = f.straight ? 1.0 : 1.1 + Math.sin(i) * .05; arr[i * 3 + 2] = (y + 16) / TILE; });
+      m.ln.geometry.attributes.position.needsUpdate = true; m.ln.material.opacity = 1 - u; m.g.visible = true;
+      if (!f.straight) lightsList.push({ x: (f.x1 + f.x2) / 2 / TILE, y: 1.2, z: ((f.y1 + f.y2) / 2 + 16) / TILE, col: new THREE.Color(f.col).getHex(), r: 3, i: (1 - u) * 1.2 });
+      continue;
+    }
     if (f.k === 'ring') {
       const m = fxMesh(f, () => { const rg = flat(new THREE.Mesh(new THREE.RingGeometry(.88, 1, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(f.col), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }))); const g = new THREE.Group(); g.add(rg); return { g, rg, mats: [rg.material] }; });
       const r = f.r / TILE * (.3 + u * .7); m.g.position.set(f.x / TILE, .15, f.y / TILE); m.g.scale.set(r, 1, r); m.rg.material.opacity = (1 - u) * .6;

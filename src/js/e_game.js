@@ -8,6 +8,21 @@ const G = {
 };
 const P = {};
 const GCD = 1.0;
+function B(id) { return (G.boons && G.boons[id]) || 0; }
+function rageGain(h, v) { h.res = Math.min(100, h.res + v * (h.tal('ragengine') ? 1.5 : 1) * (1 + B('rage') / 100)); }
+const WPROF = {
+  sword:      { owner: 'orhun', name: 'Sword', rate: 1.5, mult: .85, reach: 54, desc: 'Balanced slashes.' },
+  greataxe:   { owner: 'orhun', name: 'Greataxe', rate: 2.25, mult: 1.5, reach: 58, desc: 'Slow, heavy blows that also hit every enemy next to the target.' },
+  spear:      { owner: 'orhun', name: 'Spear', rate: 1.65, mult: .95, reach: 86, desc: 'Long-reach thrusts that pierce the enemy behind the target.' },
+  twinblades: { owner: 'orhun', name: 'Twin Blades', rate: .8, mult: .48, reach: 50, crit: .06, desc: 'Very fast alternating cuts. +6% critical chance.' },
+  staff:      { owner: 'handan', name: 'Staff', rate: 1.8, mult: .5, reach: 250, desc: 'Jade bolts.' },
+  orb:        { owner: 'handan', name: 'Orb', rate: 2.4, mult: .72, reach: 240, desc: 'A slow orb that bursts on impact and hits nearby enemies.' },
+  wand:       { owner: 'handan', name: 'Wand', rate: 1.0, mult: .3, reach: 230, desc: 'Rapid sparks.' },
+  tome:       { owner: 'handan', name: 'Tome', rate: 2.0, mult: .45, reach: 240, desc: 'Lightning that jumps to two more enemies.' },
+};
+function heroWeapon(h) { const w = G.equip && G.equip[h.key] && G.equip[h.key].weapon; return (w && w.wtype) || (h.key === 'orhun' ? 'sword' : 'staff'); }
+function weaponReach(h) { return WPROF[heroWeapon(h)].reach; }
+function zap(x1, y1, x2, y2, col = '#bfe6ff', straight = false) { G.fx.push({ k: 'zap', x1, y1, x2, y2, col, straight, t: 0, dur: straight ? .16 : .28, seed: Math.random() * 99 }); }
 
 /* ---------- Entities ---------- */
 function makeHero(key) {
@@ -30,6 +45,7 @@ function recalcStats() {
     if (h.tal('keenedge')) crit += .08;
     const ratio = h.maxHp > 1 ? h.hp / h.maxHp : 1;
     if (key === 'orhun' && h.tal('champion')) { hp *= 1.1; atk *= 1.1; }
+    hp *= 1 + B(key === 'orhun' ? 'o_hp' : 'h_hp') / 100; if (key === 'orhun') def *= 1 + B('o_def') / 100; crit += B('crit') / 100 + (WPROF[heroWeapon(h)].crit || 0);
     let resMax = b.resMax;
     if (key === 'handan' && h.tal('lanternheart')) { atk *= 1.12; resMax = Math.round(resMax * 1.2); }
     h.maxHp = Math.round(hp); h.atk = atk; h.def = def; h.crit = crit; h.resMax = resMax;
@@ -75,14 +91,15 @@ function tickBuffs(e, dt) {
 }
 
 /* ---------- Combat core ---------- */
-function gaugeAdd(v) { const m = P.handan && P.handan.tal('lanternsoul') ? 1.5 : 1; G.gauge = Math.min(100, G.gauge + v * m * 0.075 / (1 + 0.28 * (G.level - 1))); }
+function gaugeAdd(v) { const m = (P.handan && P.handan.tal('lanternsoul') ? 1.5 : 1) * (1 + B('lantern') / 100); G.gauge = Math.min(100, G.gauge + v * m * 0.075 / (1 + 0.28 * (G.level - 1))); }
 function dealDamage(src, tgt, amt, o = {}) {
   if (!tgt || tgt.dead || amt <= 0) return 0;
   if (tgt.evade) { floatText(tgt.x, tgt.y - 40, 'Evade', '#ccc'); return 0; }
   if (tgt.iframes > 0) { if (!o.dot) floatText(tgt.x, tgt.y - 44, 'Dodged', '#c9f5df', .85); return 0; }
   let d = amt * rnd(.92, 1.08) * mod(src, 'dmgDone');
+  if (src.team === 'party') { if (src.key === 'orhun') { d *= 1 + B('o_atk') / 100; if (B('fury') && src.hp / src.maxHp < .3) d *= 1.3; } else if (src.key === 'handan') d *= 1 + B('h_atk') / 100; else if (src.key === 'fox') d *= 1 + B('fox') / 100; }
   let crit = false;
-  if (!o.noCrit && Math.random() < (src.crit || 0)) { d *= 1.75; crit = true; }
+  if (!o.noCrit && Math.random() < (src.crit || 0)) { d *= 1.75 + (src.team === 'party' ? B('critdmg') / 100 : 0); crit = true; }
   const def = tgt.team === 'foe' ? tgt.deff : tgt.def;
   d *= 60 / (60 + def);
   d *= mod(tgt, 'dmgTaken');
@@ -97,6 +114,7 @@ function dealDamage(src, tgt, amt, o = {}) {
   const col = fromParty ? (crit ? '#ffd86a' : (o.dot ? '#d8b8ff' : '#ffffff')) : '#ff6a5a';
   if (d > 0) floatText(tgt.x + rnd(-8, 8), tgt.y - 44 - (tgt.r > 16 ? tgt.r : 0), (crit ? d + '!' : '' + d), col, crit ? 1.35 : (o.dot ? .8 : 1));
   if (absorbed) floatText(tgt.x, tgt.y - 30, 'absorb ' + absorbed, '#8affe0', .8);
+  if (fromParty && src.key === 'orhun' && B('leech') && d > 0) src.hp = Math.min(src.maxHp, src.hp + d * B('leech') / 100);
   if (fromParty) { gaugeAdd(d); if (crit && src.key === 'orhun' && src.tal('bloodthirst')) heal(src, src, src.maxHp * .04, true); }
   if (tgt.team === 'foe') {
     const tm = (o.threat || 1) * (src.key === 'orhun' ? 1.6 : src.key === 'fox' ? .7 : 1);
@@ -104,7 +122,8 @@ function dealDamage(src, tgt, amt, o = {}) {
     if (!o.dot) { tgt.flash = .12; sfx(crit ? 'crit' : 'hit'); }
   } else {
     tgt.flash = .15;
-    if (tgt.key === 'orhun') { P.orhun.res = Math.min(100, P.orhun.res + (d / tgt.maxHp) * 90 * (tgt.tal('ragengine') ? 1.5 : 1)); }
+    if (tgt.key === 'orhun') { rageGain(P.orhun, (d / tgt.maxHp) * 90); if (o.melee && B('thorns') && src.team === 'foe' && !src.dead) dealDamage(tgt, src, (d + absorbed) * B('thorns') / 100, { noCrit: true, threat: 1 }); }
+    if (absorbed && B('wardspike') && src.team === 'foe' && !src.dead && tgt.buffs.some(b => b.id === 'ward')) dealDamage(P.handan, src, P.handan.atk * .6, { noCrit: true });
     if (o.melee && tgt.buffs.some(b => b.riposte) && !src.dead) { setTimeout(() => dealDamage(tgt, src, tgt.atk * .6, { threat: 2, label: 'Riposte' }), 120); }
     if (src.def && src.def.drain) heal(src, src, d * .5, true);
     if (src.def && src.def.chill && !o.dot) addBuff(tgt, { id: 'chill', name: 'Chilled', dur: 3, mods: { speed: .65 }, col: '#9fdcff', debuff: true });
@@ -117,6 +136,7 @@ function dealDamage(src, tgt, amt, o = {}) {
 function heal(src, tgt, amt, quiet) {
   if (!tgt || tgt.dead) return 0;
   let h = amt * rnd(.95, 1.05);
+  if (src && src.key === 'handan') h *= 1 + B('healpow') / 100;
   if (!quiet && Math.random() < (src.crit || 0)) h *= 1.5;
   h = Math.round(h);
   const real = Math.min(h, tgt.maxHp - tgt.hp);
@@ -170,7 +190,7 @@ function kill(e, src) {
       const diff = G.level - d.lvl;
       const xp = Math.round(d.xp * (diff >= 4 ? .25 : diff >= 3 ? .6 : 1));
       gainXp(xp);
-      if (d.gold) { const g = rint(d.gold[0], d.gold[1]); G.gold += g; floatText(e.x, e.y - 20, '+' + g + 'g', '#f2c75c', .8); }
+      if (d.gold) { const g = Math.round(rint(d.gold[0], d.gold[1]) * (1 + B('gold') / 100)); G.gold += g; floatText(e.x, e.y - 20, '+' + g + 'g', '#f2c75c', .8); }
       qProgress(d.boss ? 'boss' : 'kill', e.type);
       if (d.boss) qProgress('kill', e.type);
       rollLoot(e);
@@ -249,9 +269,8 @@ function useAbility(h, idx, explicit, quiet) {
     if (a.minRange && d < a.minRange * TILE) { say('Too close'); return false; }
     if (a.range > 3 && !lineClear(h.x, h.y - 10, t.x, t.y - 10, 3)) { say('No line of sight'); return false; }
   }
-  if (h.key === 'orhun') h.res = Math.min(100, h.res - acost(h, a) + (a.gain || 0) * (h.tal('ragengine') ? 1.5 : 1));
-  else h.res -= acost(h, a);
-  h.cds[a.id] = Math.max(0, a.cd + (a.cdMod ? a.cdMod(h) : 0));
+  h.res = Math.max(0, h.res - acost(h, a)); if (h.key === 'orhun' && a.gain) rageGain(h, a.gain);
+  h.cds[a.id] = Math.max(0, a.cd + (a.cdMod ? a.cdMod(h) : 0)) * (1 - Math.min(.5, B('haste') / 100));
   h.gcd = GCD;
   if (t.team === 'foe') { if (h === ctrlHero()) { G.target = t; G.autoAtk = true; } h.target = t; h.face = t.x >= h.x ? 1 : -1; }
   if (h.key === 'handan') h.swingT = .3;
@@ -261,19 +280,26 @@ function useAbility(h, idx, explicit, quiet) {
 }
 
 /* ---------- Hero updates ---------- */
+function unstick(e) {
+  const z = G.zone; if (!z || !circleHitsSolid(z, e.x, e.y, e.r * .8)) return;
+  for (let r = 6; r < 4 * TILE; r += 6) for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, x = e.x + Math.cos(a) * r, y = e.y + Math.sin(a) * r; if (!circleHitsSolid(z, x, y, e.r * .8)) { e.x = x; e.y = y; e.path = null; return; } }
+}
 function heroTick(h, dt) {
   h.t += dt;
+  if (!h.dead && !G.mounted) unstick(h);
   if (h.iframes > 0) h.iframes -= dt;
   if (h.dead) {
     if (!G.inCombat && !(P.orhun.dead && P.handan.dead)) { h.reviveT += dt; if (h.reviveT > 4) { h.dead = false; h.hp = Math.round(h.maxHp * .35); h.lowWarned = false; const o = h === P.orhun ? P.handan : P.orhun; h.x = o.x + 20; h.y = o.y + 10; sparkle(h, '#fff2b0'); log(h.name + ' is back on their feet.', '#8affe0'); } }
     return;
   }
   tickBuffs(h, dt);
-  for (const k in h.cds) if (h.cds[k] > 0) h.cds[k] = Math.max(0, h.cds[k] - dt);
+  const cdr = mod(h, 'cdr');
+  for (const k in h.cds) if (h.cds[k] > 0) h.cds[k] = Math.max(0, h.cds[k] - dt * (k === 'dodge' ? 1 : cdr));
   h.gcd = Math.max(0, h.gcd - dt);
   h.swingT = Math.max(0, h.swingT - dt);
   if (h.flash) h.flash = Math.max(0, h.flash - dt);
-  if (h.key === 'handan') h.res = Math.min(h.resMax, h.res + (G.inCombat ? (3.2 + h.resMax * .012) * (h.tal('deepwells') ? 1.4 : 1) : h.resMax * .12) * dt);
+  if (h.key === 'handan') h.res = Math.min(h.resMax, h.res + (G.inCombat ? (3.2 + h.resMax * .012) * (h.tal('deepwells') ? 1.4 : 1) * (1 + B('mana') / 100) : h.resMax * .12) * dt);
+  if (G.inCombat && B('regen')) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * B('regen') / 100 * dt);
   else if (!G.inCombat) h.res = Math.max(0, h.res - 4 * dt);
   if (!G.inCombat && h.hp < h.maxHp) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * .05 * dt);
   if (h.hp / h.maxHp > .5) h.lowWarned = false;
@@ -290,12 +316,28 @@ function heroTick(h, dt) {
   h.autoT -= dt;
   const tgt = h === ctrlHero() ? (G.autoAtk ? G.target : null) : h.target;
   if (tgt && tgt.team === 'foe' && !tgt.dead && !has(h, 'stun') && h.autoT <= 0) {
-    const reach = HERO[h.key].melee;
+    const wt = heroWeapon(h), W = WPROF[wt];
     const d = dist(h, tgt) - tgt.r - h.r;
-    if (d <= reach && (h.key === 'orhun' || lineClear(h.x, h.y - 10, tgt.x, tgt.y - 10, 3))) {
-      h.autoT = HERO[h.key].atkRate;
-      if (h.key === 'orhun') { swing(h, tgt); dealDamage(h, tgt, h.atk * .85, { threat: 1.4 }); h.res = Math.min(100, h.res + 8 * (h.tal('ragengine') ? 1.5 : 1)); }
-      else { h.swingT = .2; h.face = tgt.x >= h.x ? 1 : -1; shoot(h, tgt, '#46c495', 360, () => dealDamage(h, tgt, h.atk * .5, { threat: 1 }), 3); }
+    if (d <= W.reach && (h.key === 'orhun' || lineClear(h.x, h.y - 10, tgt.x, tgt.y - 10, 3))) {
+      h.autoT = W.rate / (mod(h, 'aspd') * (1 + B('aspd') / 100));
+      h.swingKind = wt; h.swingN = (h.swingN || 0) + 1;
+      if (h.key === 'orhun') {
+        h.face = tgt.x >= h.x ? 1 : -1;
+        if (wt === 'spear') { h.swingT = .22; const a = Math.atan2(tgt.y - h.y, tgt.x - h.x); zap(h.x, h.y - 16, tgt.x + Math.cos(a) * 20, tgt.y - 16 + Math.sin(a) * 20, '#f4f6ff', true); sfx('slash'); }
+        else swing(h, tgt, wt === 'greataxe');
+        dealDamage(h, tgt, h.atk * W.mult, { threat: 1.4 });
+        if (wt === 'greataxe' || B('cleave')) for (const o of foesNear(tgt, 1.6 * TILE)) if (o !== tgt) dealDamage(h, o, h.atk * W.mult * (wt === 'greataxe' ? .6 : .4), { threat: 1.2 });
+        if (wt === 'spear') { const a = Math.atan2(tgt.y - h.y, tgt.x - h.x); const o = G.foes.find(f => f !== tgt && !f.dead && !f.evade && Math.hypot(f.x - (tgt.x + Math.cos(a) * 34), f.y - (tgt.y + Math.sin(a) * 34)) < 30 + f.r); if (o) dealDamage(h, o, h.atk * W.mult * .6, { threat: 1.2 }); }
+        rageGain(h, 8 * (wt === 'twinblades' ? .55 : wt === 'greataxe' ? 1.4 : 1));
+      } else {
+        h.swingT = .2; h.face = tgt.x >= h.x ? 1 : -1;
+        const chainExtra = B('chainatk');
+        const chainFrom = (first, n, mult) => { let cur = first; const hit = new Set([first]); for (let k = 0; k < n; k++) { const nx = G.foes.filter(f => !f.dead && !f.evade && !hit.has(f) && dist(f, cur) < 4 * TILE).sort((a, b) => dist(a, cur) - dist(b, cur))[0]; if (!nx) break; hit.add(nx); zap(cur.x, cur.y - 16, nx.x, nx.y - 16, wt === 'tome' ? '#d8b8ff' : '#9ff5d0'); mult *= .7; dealDamage(h, nx, h.atk * mult, { threat: 1 }); cur = nx; } };
+        if (wt === 'tome') { zap(h.x, h.y - 26, tgt.x, tgt.y - 16, '#d8b8ff'); dealDamage(h, tgt, h.atk * W.mult, { threat: 1 }); chainFrom(tgt, 2 + chainExtra, W.mult); sfx('cast'); }
+        else if (wt === 'orb') shoot(h, tgt, '#9fe8ff', 230, () => { dealDamage(h, tgt, h.atk * W.mult, { threat: 1 }); for (const o of foesNear(tgt, 1.4 * TILE)) if (o !== tgt) dealDamage(h, o, h.atk * W.mult * .5, { threat: .8 }); burstFx(tgt.x, tgt.y - 16, 30, '#9fe8ff', 6); if (chainExtra) chainFrom(tgt, chainExtra, W.mult); }, 7);
+        else if (wt === 'wand') shoot(h, tgt, '#c9ffe6', 520, () => { dealDamage(h, tgt, h.atk * W.mult, { threat: 1 }); if (chainExtra) chainFrom(tgt, chainExtra, W.mult); }, 2.5);
+        else shoot(h, tgt, '#46c495', 360, () => { dealDamage(h, tgt, h.atk * W.mult, { threat: 1 }); if (chainExtra) chainFrom(tgt, chainExtra, W.mult); }, 3);
+      }
     }
   }
 }
@@ -306,7 +348,7 @@ function moveHero(h, vx, vy, dt) {
   if (len < .01) { h.moving = false; return; }
   vx /= len; vy /= len;
   const tile = G.zone.get(Math.floor(h.x / TILE), Math.floor(h.y / TILE));
-  const sp = (HERO[h.key] ? HERO[h.key].speed : 140) * mod(h, 'speed');
+  const sp = (HERO[h.key] ? HERO[h.key].speed : 140) * mod(h, 'speed') * (1 + B('speed') / 100);
   h.lastMv = [vx, vy]; h.lastMvT = G.t;
   const slow = tile === T.MARSH ? .72 : 1;
   const ox = h.x, oy = h.y;
@@ -348,74 +390,67 @@ function engagedFoes(range = 15) {
   return G.foes.filter(f => f.aggro && !f.dead && !f.evade && dist(f, c) < range * TILE);
 }
 
+/* Generic skill AI: every skill carries an ai(h, ctx) that returns a target (or true for self) when it is worth casting. */
+function aiCtx(h, eng) {
+  const lo = heroes().filter(x => !x.dead).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+  const t = h.target && !h.target.dead && h.target.team === 'foe' ? h.target : null;
+  return { eng, t, d: t ? dist(h, t) - t.r - h.r : 1e9, lo, near: foesNear(h, 2.3 * TILE).length, mana: h.key === 'handan' ? h.res / h.resMax : 1 };
+}
+function aiCast(h, eng, filter) {
+  if (h.gcd > 0 || h.dead || h.dash || has(h, 'stun')) return false;
+  const C = aiCtx(h, eng);
+  const list = ABIL[h.key].map((a, i) => ({ a, i })).filter(o => o.a.ai && (!filter || filter(o.a)) && abilityReady(h, o.a) === 'ok').sort((x, y) => (y.a.prio || 0) - (x.a.prio || 0));
+  for (const { a, i } of list) {
+    let tg = null; try { tg = a.ai(h, C); } catch (e) { tg = null; }
+    if (tg && useAbility(h, i, tg === true ? null : tg, true)) return true;
+  }
+  return false;
+}
 function heroAI(h, dt) {
   if (h.dead || h.dash || has(h, 'stun')) return;
   const lead = ctrlHero();
   const eng = engagedFoes();
-  const lowestHero = () => heroes().filter(x => !x.dead).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
   if (eng.length) {
     if (h.key === 'orhun') {
       let t = (G.target && G.target.team === 'foe' && !G.target.dead && G.target.aggro) ? G.target : null;
       const onSoft = eng.filter(f => { const ft = foeTarget(f); return ft && ft !== P.orhun; }).sort((a, b) => dist(a, P.handan) - dist(b, P.handan));
       if (!t) t = onSoft[0] || eng.slice().sort((a, b) => dist(a, h) - dist(b, h))[0];
-      if (t.def.orb) { /* fine */ }
       h.target = t;
+      aiCast(h, eng);
       const d = dist(h, t) - t.r - h.r;
-      if (onSoft.some(f => dist(f, h) < 5 * TILE) && abilityReady(h, ABIL.orhun[1]) === 'ok') useAbility(h, 1, null, true);
-      else if (h.hp / h.maxHp < .45 && abilityReady(h, ABIL.orhun[3]) === 'ok') useAbility(h, 3, null, true);
-      else if (d < 2 * TILE) {
-        const near = foesNear(h, 2.3 * TILE).length;
-        if (h.res >= 40 && (t.hp / t.maxHp < .3 || h.res >= 75) && abilityReady(h, ABIL.orhun[4]) === 'ok') useAbility(h, 4, t, true);
-        else if (near >= 2 && abilityReady(h, ABIL.orhun[2]) === 'ok') useAbility(h, 2, null, true);
-        else if (abilityReady(h, ABIL.orhun[0]) === 'ok') useAbility(h, 0, t, true);
-      } else if (d > 3 * TILE && d < 8 * TILE && abilityReady(h, ABIL.orhun[5]) === 'ok') useAbility(h, 5, t, true);
-      if (d > HERO.orhun.melee - 4) steer(h, t.x, t.y, dt, 0, t.r + h.r + 10);
+      if (d > weaponReach(h) - 4) steer(h, t.x, t.y, dt, 0, t.r + h.r + 10);
       else { h.moving = false; h.face = t.x >= h.x ? 1 : -1; h.dir = 2; }
     } else {
-      // Handan: heals first
-      const lo = lowestHero();
+      let t = (G.target && G.target.team === 'foe' && !G.target.dead && G.target.aggro) ? G.target : (P.orhun.target && !P.orhun.target.dead ? P.orhun.target : null);
+      if (!t) t = eng.slice().sort((a, b) => dist(a, h) - dist(b, h))[0];
+      const orb = eng.filter(f => f.def.orb).sort((a, b) => dist(a, h) - dist(b, h))[0];
+      if (orb) t = orb;
+      h.target = t;
       h.aiT -= dt;
-      if (h.aiT <= 0 && h.gcd <= 0) {
-        h.aiT = .15;
-        let acted = false;
-        if (lo && lo.hp / lo.maxHp < .62 && abilityReady(h, ABIL.handan[2]) === 'ok') acted = useAbility(h, 2, lo, true);
-        if (!acted && !P.orhun.dead && eng.some(f => foeTarget(f) === P.orhun) && !P.orhun.buffs.some(b => b.id === 'ward') && abilityReady(h, ABIL.handan[4]) === 'ok') acted = useAbility(h, 4, P.orhun, true);
-        const threatToMe = eng.find(f => foeTarget(f) === h && dist(f, h) < 3 * TILE && !f.def.boss);
-        if (!acted && threatToMe && !has(threatToMe, 'root') && abilityReady(h, ABIL.handan[1]) === 'ok') acted = useAbility(h, 1, threatToMe, true);
-        let t = (G.target && G.target.team === 'foe' && !G.target.dead && G.target.aggro) ? G.target : (P.orhun.target && !P.orhun.target.dead ? P.orhun.target : null);
-        if (!t) t = eng.slice().sort((a, b) => dist(a, h) - dist(b, h))[0];
-        const orb = eng.filter(f => f.def.orb).sort((a, b) => dist(a, h) - dist(b, h))[0];
-        if (orb) t = orb;
-        h.target = t;
-        if (!acted && t && dist(h, t) - t.r < 8 * TILE && lineClear(h.x, h.y - 10, t.x, t.y - 10, 3)) {
-          const cluster = foesNearPt(t.x, t.y, 2.5 * TILE).length;
-          const healReserve = h.res > h.resMax * .3;
-          if (cluster >= 3 && healReserve && abilityReady(h, ABIL.handan[5]) === 'ok') acted = useAbility(h, 5, t, true);
-          if (!acted && healReserve && t.hp / t.maxHp > .3 && t.maxHp > 100 && !t.buffs.some(b => b.id === 'wither') && abilityReady(h, ABIL.handan[3]) === 'ok') acted = useAbility(h, 3, t, true);
-          if (!acted && h.res > h.resMax * .22 && abilityReady(h, ABIL.handan[0]) === 'ok') acted = useAbility(h, 0, t, true);
-        }
-      }
+      if (h.aiT <= 0 && h.gcd <= 0) { h.aiT = .15; aiCast(h, eng); }
       // positioning: keep 4-7 tiles from target, near leader
-      const t = h.target;
-      const avoidPool = G.pools.find(p => Math.hypot(p.x - h.x, p.y - h.y) < p.r + 6) || G.teles.find(p => p.harm && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 8);
+      const avoidPool = G.pools.find(p => !p.ally && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 6) || G.teles.find(p => p.harm && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 8);
       if (avoidPool) { const a = Math.atan2(h.y - avoidPool.y, h.x - avoidPool.x); moveHero(h, Math.cos(a), Math.sin(a), dt); }
       else if (t) {
         const d = dist(h, t);
         const melee = eng.find(f => foeTarget(f) === h && !f.def.ranged && dist(f, h) < 2.2 * TILE);
         if (melee && !P.orhun.dead) { steer(h, P.orhun.x - (melee.x - P.orhun.x) * .5, P.orhun.y - (melee.y - P.orhun.y) * .5, dt, 0, 10); }
-        else if (d > 7.2 * TILE || !lineClear(h.x, h.y - 10, t.x, t.y - 10, 3)) steer(h, t.x, t.y, dt, 0, 5 * TILE);
+        else if (d > 7.2 * TILE) steer(h, t.x, t.y, dt, 0, 5 * TILE);
+        else if (!lineClear(h.x, h.y - 10, t.x, t.y - 10, 3)) steer(h, t.x, t.y, dt, 0, TILE);
         else if (d < 3.2 * TILE && !t.def.ranged) { const a = Math.atan2(h.y - t.y, h.x - t.x); moveHero(h, Math.cos(a), Math.sin(a), dt); }
         else { h.moving = false; h.face = t.x >= h.x ? 1 : -1; h.dir = 2; }
       }
     }
     { const tl = G.teles.find(p => p.harm && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 4 && p.t > p.dur * .5); if (tl && !(h.cds.dodge > 0)) { dodge(h, h.x - tl.x, h.y - tl.y); return; } }
-    // Orhun dodges telegraphs too
     if (h.key === 'orhun') { const tl = G.teles.find(p => p.harm && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 6 && p.t > p.dur * .35); if (tl) { const a = Math.atan2(h.y - tl.y, h.x - tl.x); moveHero(h, Math.cos(a), Math.sin(a), dt); } }
     return;
   }
   // out of combat: heal up, follow leader
   h.target = null;
-  if (h.key === 'handan' && h.gcd <= 0) { const lo = lowestHero(); if (lo && lo.hp / lo.maxHp < .5 && h.res > 40 && abilityReady(h, ABIL.handan[2]) === 'ok') useAbility(h, 2, lo, true); }
+  if (h.key === 'handan' && h.gcd <= 0 && h.res > 40) {
+    const lo = heroes().filter(x => !x.dead).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+    if (lo && lo.hp / lo.maxHp < .5) { const i = ABIL.handan.findIndex(a => a.role === 'heal' && abilityReady(h, a) === 'ok'); if (i >= 0) useAbility(h, i, lo, true); }
+  }
   followLeader(h, lead, dt, h.key === 'orhun' ? 1 : -1);
 }
 function followLeader(e, lead, dt, side) {
@@ -622,6 +657,7 @@ function updateProj(dt) {
 /* ---------- XP, loot, quests ---------- */
 function gainXp(n) {
   if (G.level >= MAX_LVL) return;
+  n = Math.round(n * (1 + B('xpb') / 100));
   G.xp += n; floatText(ctrlHero().x, ctrlHero().y - 70, '+' + n + ' xp', '#c9a8ff', .8);
   while (G.level < MAX_LVL && G.xp >= XP_NEED[G.level]) {
     G.xp -= XP_NEED[G.level]; G.level++;
@@ -629,7 +665,8 @@ function gainXp(n) {
     for (const h of heroes()) { h.hp = h.maxHp; if (h.key === 'handan') h.res = h.resMax; if (h.dead) { h.dead = false; h.hp = h.maxHp; } sparkle(h, '#ffe08a'); }
     sfx('level'); banner('Level ' + G.level, 'Orhun and Handan grow stronger');
     log('You reached level ' + G.level + '.', '#ffd86a');
-    for (const k of ['orhun', 'handan']) for (const a of ABIL[k]) if (a.lvl === G.level) toast(`${HERO[k].name} learned <b>${a.name}</b>`);
+    for (const k of ['orhun', 'handan']) for (const a of SKILL_POOL[k]) if (a.lvl === G.level) toast(G.loadout && G.loadout[k].includes(a.id) ? `${HERO[k].name} learned <b>${a.name}</b>` : `New skill for ${HERO[k].name}: <b>${a.name}</b>. Equip it in Skills (K).`);
+    G.pendingBoons = (G.pendingBoons || 0) + 1;
     if (TALENTS[G.level]) G.pendingTalent = G.level;
     rollVendor();
     if (Math.random() < .5) { const l = pick(BANTER.levelup); setTimeout(() => bark(l[0], l[1]), 1500); }
@@ -739,12 +776,13 @@ function lanternburst(who) {
   const dmg = (P.orhun.atk + P.handan.atk) * 3.2;
   for (const f of foesNear(c, 6 * TILE)) { let d = dmg; if ((f.type === 'king' || f.type === 'wyrm') && f.bs.p3) d += f.maxHp * (f.type === 'wyrm' ? .1 : .12); dealDamage(P.handan, f, d, { noCrit: true, threat: .5 }); }
   floatText(c.x, c.y - 80, 'LANTERNBURST', '#c9f5df', 1.6);
+  if (B('lanternlink')) for (const h of heroes()) { for (const k in h.cds) if (k !== 'dodge') h.cds[k] = 0; }
 }
 function drinkPotion(c = ctrlHero()) {
   if (G.potCd > 0) { floatText(c.x, c.y - 60, 'Potion not ready', '#ff9a8a', .85); return; }
   if (G.potions <= 0) { floatText(c.x, c.y - 60, 'No Healing Draughts', '#ff9a8a', .85); sfx('deny'); return; }
   if (c.dead) return;
-  G.potions--; G.potCd = 20; heal(c, c, c.maxHp * .45); sparkle(c, '#ff8a7a'); sfx('heal');
+  G.potions--; G.potCd = 20; heal(c, c, c.maxHp * .45 * (1 + B('draught') / 100)); sparkle(c, '#ff8a7a'); sfx('heal');
   if (c.key === 'orhun' && c.tal('secondwind')) { c.res = Math.min(100, c.res + 30); addBuff(c, { id: 'secondwind', name: 'Second Wind', dur: 6, mods: { dmgTaken: .8 }, col: '#ff8a7a' }); }
 }
 function swapHero(silent) {
@@ -833,7 +871,7 @@ function update(dt) {
     else if (G.moveTo) {
       const m = G.moveTo;
       if (m.npc) { if (dist(c, m.npc) < 1.8 * TILE) { G.moveTo = null; c.moving = false; talkTo(m.npc); } else steer(c, m.npc.x, m.npc.y, dt, 0, 20); }
-      else if (m.foe) { const t = m.foe; const reach = HERO[c.key].melee; if (t.dead) G.moveTo = null; else if (dist(c, t) - t.r - c.r <= reach * .9 && (c.key === 'orhun' || lineClear(c.x, c.y - 10, t.x, t.y - 10, 3))) { G.moveTo = null; c.moving = false; c.face = t.x >= c.x ? 1 : -1; } else steer(c, t.x, t.y, dt, 0, t.r + c.r + 8); }
+      else if (m.foe) { const t = m.foe; const reach = weaponReach(c); if (t.dead) G.moveTo = null; else if (dist(c, t) - t.r - c.r <= reach * .9 && (c.key === 'orhun' || lineClear(c.x, c.y - 10, t.x, t.y - 10, 3))) { G.moveTo = null; c.moving = false; c.face = t.x >= c.x ? 1 : -1; } else steer(c, t.x, t.y, dt, 0, t.r + c.r + 8); }
       else if (steer(c, m.x, m.y, dt, 0, 6)) G.moveTo = null;
     } else c.moving = false;
   }
