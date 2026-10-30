@@ -1,7 +1,7 @@
 /* ===================== WORLD ===================== */
-const T = { GRASS: 0, PATH: 1, WATER: 2, WALL: 3, FLOOR: 4, TREE: 5, MARSH: 6, BRIDGE: 7, ROCK: 8, DGRASS: 9, ROOF: 10, PLAZA: 11, VOID: 12, GATE: 13, DEEP: 14 };
+const T = { GRASS: 0, PATH: 1, WATER: 2, WALL: 3, FLOOR: 4, TREE: 5, MARSH: 6, BRIDGE: 7, ROCK: 8, DGRASS: 9, ROOF: 10, PLAZA: 11, VOID: 12, GATE: 13, DEEP: 14, ICE: 15 };
 const SOLID = new Set([T.WATER, T.WALL, T.TREE, T.ROCK, T.ROOF, T.VOID, T.DEEP]);
-const MM_COL = { 0: '#2f4a2a', 1: '#7a6244', 2: '#24506e', 3: '#4a4652', 4: '#34323c', 5: '#1a3018', 6: '#33452f', 7: '#7a5a34', 8: '#5a5a60', 9: '#263c26', 10: '#6a3028', 11: '#5a5862', 12: '#000', 13: '#9a7a3a', 14: '#163448' };
+const MM_COL = { 15: '#9cc4dc', 0: '#2f4a2a', 1: '#7a6244', 2: '#24506e', 3: '#4a4652', 4: '#34323c', 5: '#1a3018', 6: '#33452f', 7: '#7a5a34', 8: '#5a5a60', 9: '#263c26', 10: '#6a3028', 11: '#5a5862', 12: '#000', 13: '#9a7a3a', 14: '#163448' };
 
 class Zone {
   constructor(id, name, w, h, opt) {
@@ -42,7 +42,7 @@ class Zone {
     }
   }
   scatter(t, test) { for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) if (test(x, y, this.get(x, y))) this.set(x, y, t); }
-  solid(x, y) { const t = this.get(x, y); if (t === T.GATE) return !G.gateOpen; return SOLID.has(t); }
+  solid(x, y) { const t = this.get(x, y); if (t === T.GATE) return !gateOpenFor(this.id); return SOLID.has(t); }
   clearPt(x, y, r = 1) { for (let j = y - r; j <= y + r; j++) for (let i = x - r; i <= x + r; i++) if (this.solid(i, j)) return false; return true; }
   randomOpen(rng, x0, y0, x1, y1, types = [T.GRASS, T.DGRASS, T.MARSH, T.FLOOR, T.PATH]) {
     for (let k = 0; k < 400; k++) {
@@ -56,6 +56,9 @@ class Zone {
 }
 
 /* ---------- Zone builders ---------- */
+function gateOpenFor(id) { return id === 'frostspire' ? !!G.frostGate : !!G.gateOpen; }
+function ch1Done() { return !!(G.q.q10 && G.q.q10.st === 'done'); }
+
 function buildTown() {
   const z = new Zone('town', 'Lanternhold', 44, 32, { seed: 11, dark: 0.62, tint: '#0a1028', style: 'town', music: 0, canopy: 'oak' });
   z.fill(T.GRASS);
@@ -66,13 +69,17 @@ function buildTown() {
   z.path([[30, 16], [43, 16]], 3, T.PATH, 0.4);
   z.path([[13, 16], [2, 16]], 3, T.PATH, 0.6);
   z.path([[22, 22], [22, 30]], 3, T.PATH, 0.6);
+  z.path([[22, 11], [22, 0]], 3, T.PATH, 0.3);
   z.house(3, 4, 8, 6); z.house(33, 4, 8, 6); z.house(3, 22, 8, 6); z.house(33, 22, 8, 6); z.house(14, 2, 6, 6); z.house(24, 2, 6, 6);
   z.rect(21, 15, 3, 3, T.WATER); z.decor.push({ type: 'fountain', x: 22, y: 16 });
   [[13, 10], [30, 10], [13, 22], [30, 22], [34, 14], [40, 14], [34, 18], [40, 18], [8, 14], [8, 18], [20, 27], [24, 27], [17, 10], [26, 10]].forEach(([x, y]) => z.lantern(x, y));
   z.decor.push({ type: 'stall', x: 28, y: 20 }, { type: 'herbs', x: 15, y: 20 }, { type: 'banner', x: 19, y: 10 }, { type: 'banner', x: 25, y: 10 });
-  z.npcs.push({ id: 'maren', x: 22, y: 12.6 }, { id: 'sela', x: 16, y: 19 }, { id: 'dorrak', x: 28, y: 19 });
+  z.npcs.push({ id: 'maren', x: 22, y: 12.6 }, { id: 'sela', x: 16, y: 19 }, { id: 'dorrak', x: 28, y: 19 }, { id: 'ayla', x: 25.6, y: 12.4, req: ch1Done });
+  z.lantern(20, 3); z.lantern(24, 3);
   z.portals.push({ x: 43, y: 14, w: 1, h: 5, to: 'brightfield', entry: 'west', label: 'Brightfield' });
-  z.entries = { start: [22, 20], east: [40.5, 16.5] };
+  z.portals.push({ x: 20, y: 0, w: 4, h: 1, to: 'frostspire', entry: 'south', label: 'Frostspire Pass', push: [0, 48], req: ch1Done, lock: 'Deep snow buries the north road. The way opens once the First Lantern burns again.' });
+  z.entries = { start: [22, 20], east: [40.5, 16.5], north: [22, 2.6] };
+  z.waystone = { x: 18, y: 13 };
   return z;
 }
 
@@ -114,6 +121,7 @@ function buildBrightfield() {
   z.portals.push({ x: 0, y: 23, w: 1, h: 7, to: 'town', entry: 'east', label: 'Lanternhold' });
   z.portals.push({ x: 71, y: 41, w: 1, h: 7, to: 'murkfen', entry: 'west', label: 'Murkfen', req: () => G.q.q4 && (G.q.q4.st === 'done' || G.beacons.b1), lock: 'A wall of Hollow darkness blocks the road. Relight the Brightfield beacon first.' });
   z.entries = { west: [3.5, 26.5], east: [68.5, 44.5] };
+  z.waystone = { x: 53, y: 27, need: 'b1' };
   return z;
 }
 
@@ -149,6 +157,7 @@ function buildMurkfen() {
   z.portals.push({ x: 0, y: 41, w: 1, h: 7, to: 'brightfield', entry: 'east', label: 'Brightfield' });
   z.portals.push({ x: 71, y: 8, w: 1, h: 6, to: 'keep', entry: 'west', label: 'Hollow Keep', req: () => !!G.beacons.b2, lock: 'The causeway is drowned in shadow. Relight the Murkfen beacon first.' });
   z.entries = { west: [3.5, 44.5], east: [68.5, 11.5] };
+  z.waystone = { x: 15, y: 42, need: 'b2' };
   return z;
 }
 
@@ -181,11 +190,62 @@ function buildKeep() {
   z.pickups.push({ id: 's1', item: 'shard', x: 30, y: 5 }, { id: 's2', item: 'shard', x: 30, y: 55 }, { id: 's3', item: 'shard', x: 54, y: 30 });
   z.portals.push({ x: 0, y: 28, w: 1, h: 5, to: 'murkfen', entry: 'east', label: 'Murkfen' });
   z.entries = { west: [3.5, 30.5] };
+  z.waystone = { x: 4, y: 27, need: 'b3' };
+  return z;
+}
+
+function buildFrostspire() {
+  const z = new Zone('frostspire', 'Frostspire Pass', 72, 52, { seed: 83, dark: 0.5, tint: '#0a1438', style: 'snow', canopy: 'pine', snow: true });
+  z.fill(T.GRASS);
+  z.scatter(T.DGRASS, (x, y) => fbm(x * .12, y * .12, 84) > .55);
+  z.border(2, T.TREE, [[33, 50, 6, 2]]);
+  z.scatter(T.ROCK, (x, y, t) => t !== T.TREE && fbm(x * .16, y * .16, 85) > .66);
+  z.scatter(T.TREE, (x, y, t) => (t === T.GRASS || t === T.DGRASS) && fbm(x * .14, y * .14, 86) > .6);
+  // frozen lake
+  for (let y = 0; y < z.h; y++) for (let x = 0; x < z.w; x++) { const d = Math.hypot((x - 19) / 8.5, (y - 25) / 6.2) + (fbm(x * .3, y * .3, 87) - .5) * .5; if (d < 1) z.set(x, y, T.ICE); }
+  // the forge plateau, walled off by cliffs with an ice gate
+  z.rect(46, 2, 2, 17, T.ROCK); z.rect(46, 17, 24, 2, T.ROCK);
+  z.rect(48, 2, 22, 15, T.GRASS);
+  z.scatter(T.DGRASS, (x, y, t) => t === T.GRASS && x >= 48 && y < 17 && fbm(x * .2, y * .2, 88) > .5);
+  z.scatter(T.ROCK, (x, y, t) => t !== T.ROCK && x >= 48 && y < 17 && Math.hypot(x - 58, y - 9) > 7.5 && hash2(x, y, 89) > .55);
+  z.circle(58, 9, 7, T.DGRASS, [T.ROCK, T.TREE, T.GRASS]);
+  z.circle(58, 9, 4.5, T.PLAZA);
+  // paths
+  z.path([[36, 51], [36, 44], [30, 38], [24, 33]], 3);
+  z.path([[36, 44], [44, 38], [52, 30], [57, 22], [57, 16]], 3);
+  z.path([[24, 33], [16, 16], [12, 10]], 3);
+  z.path([[30, 38], [10, 42]], 2);
+  z.path([[44, 38], [60, 42]], 2);
+  z.path([[57, 16], [58, 12]], 3);
+  // clearings
+  [[36, 44, 4.5], [12, 10, 4.5], [28, 13, 3.5], [12, 42, 4], [60, 42, 4], [23, 33, 3], [50, 31, 3.5], [57, 22, 4]].forEach(([x, y, r]) => z.circle(x, y, r, T.GRASS, [T.TREE, T.ROCK, T.DGRASS]));
+  for (let x = 55; x <= 59; x++) { z.set(x, 17, T.GATE); z.set(x, 18, T.PATH); }
+  z.set(54, 17, T.ROCK); z.set(60, 17, T.ROCK);
+  z.beacons.push({ id: 'b4', x: 58, y: 6, first: true });
+  [[52, 6], [64, 6], [52, 12], [64, 12]].forEach(([x, y]) => z.decor.push({ type: 'brazier', x, y }));
+  [[36, 49], [32, 41], [40, 41], [26, 35], [47, 35], [54, 26], [56, 19], [60, 19]].forEach(([x, y]) => z.lantern(x, y, 'b4'));
+  z.decor.push({ type: 'campfire', x: 37, y: 45 }, { type: 'tent', x: 39, y: 42 }, { type: 'tent', x: 31, y: 43 });
+  z.lantern(34, 46); z.lantern(40, 46);
+  z.npcs.push({ id: 'kael', x: 35.5, y: 43.4 });
+  const S = (type, x, y) => z.spawns.push({ type, x, y });
+  S('frostwolf', 12, 42); S('frostwolf', 14, 43); S('frostwolf', 11, 40);
+  S('frostwolf', 60, 42); S('frostwolf', 62, 43); S('frostwolf', 59, 40);
+  S('frostwolf', 23, 31); S('frostwolf', 25, 33); S('frostwolf', 50, 30); S('frostwolf', 52, 32);
+  S('frostcaller', 12, 10); S('frostcaller', 15, 8); S('rimewraith', 10, 13); S('rimewraith', 14, 12);
+  S('frostcaller', 28, 13); S('rimewraith', 30, 11); S('frostcaller', 19, 18); S('rimewraith', 26, 20);
+  S('golem', 55, 22); S('golem', 60, 22);
+  S('wyrm', 58, 9);
+  const r = mulberry32(91);
+  for (let i = 0; i < 4; i++) { const [x, y] = z.randomOpen(r, 13, 21, 26, 30, [T.ICE]); z.pickups.push({ id: 'em' + i, item: 'ember', x, y }); }
+  for (let i = 4; i < 7; i++) { const [x, y] = z.randomOpen(r, 6, 6, 44, 46, [T.GRASS, T.DGRASS]); z.pickups.push({ id: 'em' + i, item: 'ember', x, y }); }
+  z.portals.push({ x: 33, y: 51, w: 6, h: 1, to: 'town', entry: 'north', label: 'Lanternhold', push: [0, -48] });
+  z.entries = { south: [36, 48.6] };
+  z.waystone = { x: 32, y: 47, need: 'b4' };
   return z;
 }
 
 const ZONES = {};
-function initZones() { ZONES.town = buildTown(); ZONES.brightfield = buildBrightfield(); ZONES.murkfen = buildMurkfen(); ZONES.keep = buildKeep(); }
+function initZones() { ZONES.town = buildTown(); ZONES.brightfield = buildBrightfield(); ZONES.murkfen = buildMurkfen(); ZONES.keep = buildKeep(); ZONES.frostspire = buildFrostspire(); }
 
 /* ---------- Collision & pathing ---------- */
 function circleHitsSolid(z, x, y, r) {

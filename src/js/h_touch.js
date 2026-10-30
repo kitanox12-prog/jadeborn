@@ -18,30 +18,38 @@
   .touch #bottom{left:0;right:0;transform:none;bottom:0;pointer-events:none}
   .touch #gaugeRow,.touch #menu,.touch #log,.touch #swapBtn,.touch #bCoop,.touch #bPlayers,.touch #title .keys{display:none!important}
   .touch #xpbar{position:fixed;left:0;right:0;bottom:0;width:auto;height:3px;border:0;border-radius:0;pointer-events:none}
-  .touch #bar{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px);gap:8px;padding:8px;background:rgba(15,19,27,.5);border-radius:14px;pointer-events:auto}
+  .touch #bar{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,58px);grid-template-rows:repeat(2,58px);gap:8px;padding:8px;background:rgba(15,19,27,.5);border-radius:14px;pointer-events:auto}
   .touch #bar > div:not(.slot){display:none}
   .touch #bar .slot,.touch #tUtil .slot{width:58px;height:58px;border-radius:50%;border:2px solid #000;box-shadow:0 2px 8px rgba(0,0,0,.5),inset 0 0 0 1px rgba(224,166,78,.25)}
   .touch #bar .slot .key,.touch #tUtil .slot .key{display:none}
   .touch #bar .slot .cost{right:50%;transform:translateX(50%);bottom:2px}
-  .touch #bar .slot[data-pos="0"]{grid-column:3;grid-row:2;box-shadow:0 0 0 2px rgba(224,166,78,.6),0 2px 10px rgba(0,0,0,.6)}
-  .touch #bar .slot[data-pos="1"]{grid-column:2;grid-row:2}
-  .touch #bar .slot[data-pos="2"]{grid-column:1;grid-row:2}
-  .touch #bar .slot[data-pos="3"]{grid-column:3;grid-row:1}
-  .touch #bar .slot[data-pos="4"]{grid-column:2;grid-row:1}
-  .touch #bar .slot[data-pos="5"]{grid-column:1;grid-row:1}
+  .touch #bar .slot[data-pos="0"]{grid-column:4;grid-row:2;box-shadow:0 0 0 2px rgba(224,166,78,.6),0 2px 10px rgba(0,0,0,.6)}
+  .touch #bar .slot[data-pos="1"]{grid-column:3;grid-row:2}
+  .touch #bar .slot[data-pos="2"]{grid-column:2;grid-row:2}
+  .touch #bar .slot[data-pos="3"]{grid-column:4;grid-row:1}
+  .touch #bar .slot[data-pos="4"]{grid-column:3;grid-row:1}
+  .touch #bar .slot[data-pos="5"]{grid-column:2;grid-row:1}
+  .touch #bar .slot[data-pos="dodge"]{grid-column:1;grid-row:2;box-shadow:0 0 0 2px rgba(201,245,223,.5),0 2px 8px rgba(0,0,0,.5)}
+  .touch #bar #tLantern{grid-column:1;grid-row:1;width:58px;height:58px}
+  .touch .btn kbd{display:none}
+  .touch .mmbtns .btn{padding:4px 6px}
   .touch .slot.press{transform:scale(.9);filter:brightness(1.3)}
   .touch .slot.locked::after{font-size:12px;border-radius:50%}
-  #tUtil{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 216px);bottom:max(12px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:auto}
+  #tUtil{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 282px);bottom:max(12px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:auto}
   #tUtil .slot{width:50px!important;height:50px!important}
   .tbtn{width:50px;height:50px;border-radius:50%;border:2px solid #000;background:radial-gradient(circle at 50% 35%,#2a3242,#141922);color:var(--parch);font:700 11px var(--body);letter-spacing:.04em;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.5),inset 0 0 0 1px rgba(224,166,78,.25);position:relative;overflow:hidden;padding:0;cursor:pointer}
   .tbtn:active{transform:scale(.9)}
+  .tbtn.on{box-shadow:0 0 12px #46c495,0 0 0 2px #7dffc8}
   .tbtn svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   #tLantern{color:#c9f5df}
   #tLantern i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,#2b7d5f,#46c495);opacity:.75;display:block}
   #tLantern svg{position:relative}
   #tLantern.full{box-shadow:0 0 16px #46c495,0 0 0 2px #c9f5df}
-  #tUse{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 8px);bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 150px);min-width:110px;height:44px;border-radius:22px;border:2px solid var(--brass);background:linear-gradient(180deg,#7a5420,#4e3412);color:#fff3da;font:800 14px var(--body);letter-spacing:.06em;text-transform:uppercase;pointer-events:auto;box-shadow:0 0 14px rgba(224,166,78,.45)}
+  #tUse{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 8px);bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 152px);min-width:110px;height:44px;border-radius:22px;border:2px solid var(--brass);background:linear-gradient(180deg,#7a5420,#4e3412);color:#fff3da;font:800 14px var(--body);letter-spacing:.06em;text-transform:uppercase;pointer-events:auto;box-shadow:0 0 14px rgba(224,166,78,.45)}
   #tUse:active{transform:scale(.94)}
+  #tDodge{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 8px);bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 150px);pointer-events:auto}
+  #tDodge .slot{width:54px!important;height:54px!important;border-radius:50%;border:2px solid #000;box-shadow:0 2px 8px rgba(0,0,0,.5),inset 0 0 0 1px rgba(201,245,223,.35)}
+  #tDodge .slot .key{display:none}
   #joyBase{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:2px solid rgba(236,226,201,.35);background:radial-gradient(circle,rgba(236,226,201,.08),rgba(236,226,201,.02));pointer-events:none;z-index:6}
   #joyKnob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(255,240,210,.55),rgba(224,166,78,.35));border:2px solid rgba(255,240,210,.6)}
   #joyHint{position:fixed;left:calc(max(16px,env(safe-area-inset-left,0px)) + 30px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 30px);width:96px;height:96px;border-radius:50%;border:2px dashed rgba(236,226,201,.22);display:grid;place-items:center;color:rgba(236,226,201,.4);font:700 10px var(--body);letter-spacing:.12em;text-transform:uppercase;pointer-events:none;text-align:center}
@@ -86,6 +94,7 @@
     <button class="tbtn" id="tLantern" aria-label="Lanternburst"><i></i>${svg('<path d="M9 3h6M10 3v2M14 3v2M7 7h10l-1 11H8L7 7zM9 21h6"/><path d="M12 10c1.5 1.6 1.5 3.6 0 5c-1.5-1.4-1.5-3.4 0-5z"/>')}</button>`;
   hud.appendChild(util);
   const use = document.createElement('button'); use.id = 'tUse'; use.hidden = true; use.textContent = 'Talk'; hud.appendChild(use);
+  const dwrap = document.createElement('div'); dwrap.id = 'tDodge'; hud.appendChild(dwrap);
   const hint = document.createElement('div'); hint.id = 'joyHint'; hint.textContent = 'Move'; hud.appendChild(hint);
   const base = document.createElement('div'); base.id = 'joyBase'; base.hidden = true; base.innerHTML = '<div id="joyKnob"></div>'; document.body.appendChild(base);
   const knob = base.firstChild;
@@ -94,7 +103,7 @@
   document.querySelector('.mmbtns').appendChild(more);
   $('bHelp').hidden = true;
   const pop = document.createElement('div'); pop.id = 'tMore'; pop.className = 'win'; pop.style.cssText = 'left:auto;transform:none;'; pop.hidden = true;
-  pop.innerHTML = `<button class="btn" id="mSound">Sound: on</button><button class="btn" id="mSave">Save journey</button><button class="btn" id="mHelp">How to play</button>${alt ? `<button class="btn" id="mGfx">${alt.label}</button>` : ''}`;
+  pop.innerHTML = `<button class="btn" id="mSound">Sound: on</button><button class="btn" id="mAuto">Auto-cast: ${G.autoCast ? 'on' : 'off'}</button><button class="btn" id="mSave">Save journey</button><button class="btn" id="mHelp">How to play</button>${alt ? `<button class="btn" id="mGfx">${alt.label}</button>` : ''}`;
   document.body.appendChild(pop);
 
   function audioResume() { try { if (SND.ctx && SND.ctx.state !== 'running') SND.ctx.resume(); } catch (e) { } }
@@ -104,12 +113,15 @@
 
   const tap = (el, fn) => el.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); SND.init(); fn(); });
   tap($('tSwap'), () => swapHero());
-  tap($('tTarget'), () => { cycleTarget(); if (G.target) G.autoAtk = true; sfx('ui'); });
+  tap($('tTarget'), () => { if (!G.inCombat) { mountToggle(); return; } cycleTarget(); if (G.target) G.autoAtk = true; sfx('ui'); });
+  const tgtSvg = $('tTarget').innerHTML, mountSvg = svg('<path d="M4 15c2-4 6-6 10-6l3-3 1 4c2 1 3 3 3 5"/><path d="M6 15v4M10 15v4M15 15v4M19 15v3"/><circle cx="16" cy="8" r=".5"/>');
+  let tgtMode = 'target';
   tap($('tLantern'), () => lanternburst());
   tap(use, () => interact());
   more.onclick = ev => { ev.stopPropagation(); pop.hidden = !pop.hidden; $('mSound').textContent = 'Sound: ' + (SND.on ? 'on' : 'off'); };
   $('mSound').onclick = () => { SND.init(); const on = SND.toggle(); $('mSound').textContent = 'Sound: ' + (on ? 'on' : 'off'); $('bSound').textContent = 'Sound: ' + (on ? 'on' : 'off'); };
   $('mSave').onclick = () => { saveGame(false); pop.hidden = true; };
+  $('mAuto').onclick = () => { setAutoCast(!G.autoCast); };
   $('mHelp').onclick = () => { pop.hidden = true; $('help').hidden = false; };
   if (alt) $('mGfx').onclick = switchGfx;
   document.addEventListener('pointerdown', ev => { if (!pop.hidden && !pop.contains(ev.target) && ev.target !== more) pop.hidden = true; });
@@ -139,9 +151,12 @@
   buildActionBar = function () {
     _bab();
     const old = util.querySelector('.slot'); if (old) old.remove();
+    dwrap.innerHTML = '';
+    $('bar').insertBefore($('tLantern'), $('bar').firstChild);
     for (const s of slotEls) {
       const el = s.el; el.dataset.pos = s.pot ? 'pot' : String(s.i);
       if (s.pot) util.appendChild(el);
+
       let timer = null, tipped = false, pid = null;
       el.addEventListener('pointerdown', ev => {
         ev.preventDefault(); ev.stopPropagation(); SND.init();
@@ -154,7 +169,7 @@
         clearTimeout(timer); el.classList.remove('press'); pid = null;
         if (tipped) { hideTip(); return; }
         if (cancel) return;
-        if (s.pot) drinkPotion(ctrlHero()); else useAbility(ctrlHero(), s.i);
+        if (s.pot) drinkPotion(ctrlHero()); else if (s.dodge) dodge(ctrlHero()); else useAbility(ctrlHero(), s.i);
       };
       el.addEventListener('pointerup', ev => end(ev, false));
       el.addEventListener('pointercancel', ev => end(ev, true));
@@ -176,6 +191,9 @@
     }
     if (label !== lastUse) { lastUse = label; use.hidden = !label; use.textContent = label; }
     $('tSwap').style.opacity = otherHero().dead ? .35 : 1;
+    const mode = G.inCombat ? 'target' : 'mount';
+    if (mode !== tgtMode) { tgtMode = mode; $('tTarget').innerHTML = mode === 'mount' ? mountSvg : tgtSvg; $('tTarget').setAttribute('aria-label', mode === 'mount' ? 'Ride Lumen' : 'Next target'); }
+    $('tTarget').classList.toggle('on', G.mounted);
   };
 
   // one phone, one player
@@ -202,7 +220,10 @@
     <tr><td>Move</td><td>Put your left thumb anywhere on the left half of the screen and slide.</td></tr>
     <tr><td>Target</td><td>Tap an enemy to target it. Orhun walks over and attacks. Tap open ground on the right half to walk there.</td></tr>
     <tr><td>Abilities</td><td>The six round buttons on the right. The corner one is your main attack. Hold any button to read what it does.</td></tr>
-    <tr><td>Side buttons</td><td>Swap hero · Next target · Lanternburst (when the jade fills) · Healing Draught.</td></tr>
+    <tr><td>Dodge</td><td>The button above your abilities. Orhun rolls and Handan steps through the jade in the direction you are moving. Attacks pass through you while dodging.</td></tr>
+    <tr><td>Side buttons</td><td>Swap hero · Next target in a fight, or Ride Lumen outside of fights · Lanternburst (when the jade fills) · Healing Draught.</td></tr>
+    <tr><td>Travel</td><td>The Travel button under the map takes you to any waystone you have woken. Relighting a zone's beacon wakes its waystone; Lanternhold's is always open.</td></tr>
+    <tr><td>Auto-cast</td><td>Turn it on in the ⋯ menu and abilities fire by themselves during fights. You still move and pick targets.</td></tr>
     <tr><td>Talk / Relight</td><td>A gold button appears when you stand near someone or a beacon. You can also tap people directly.</td></tr>
     <tr><td>Menus</td><td>Bags, Quests and ⋯ (sound, save, help) sit under the map. In bags, tap an item once to read it, tap again to equip or sell.</td></tr>
     <tr><td>Roles</td><td><b>Orhun</b> holds enemies with Sunder and Challenging Roar and hits hard. <b>Handan</b> casts from range, roots, and heals with Mending Light and Jade Ward. The hero you are not playing fights on their own.</td></tr>

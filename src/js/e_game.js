@@ -29,7 +29,10 @@ function recalcStats() {
     if (h.tal('thickskin')) def *= 1.2;
     if (h.tal('keenedge')) crit += .08;
     const ratio = h.maxHp > 1 ? h.hp / h.maxHp : 1;
-    h.maxHp = Math.round(hp); h.atk = atk; h.def = def; h.crit = crit; h.resMax = b.resMax;
+    if (key === 'orhun' && h.tal('champion')) { hp *= 1.1; atk *= 1.1; }
+    let resMax = b.resMax;
+    if (key === 'handan' && h.tal('lanternheart')) { atk *= 1.12; resMax = Math.round(resMax * 1.2); }
+    h.maxHp = Math.round(hp); h.atk = atk; h.def = def; h.crit = crit; h.resMax = resMax;
     h.hp = Math.max(h.dead ? 0 : 1, Math.round(h.maxHp * ratio));
     if (key === 'handan') h.res = Math.min(h.res, h.resMax);
   }
@@ -66,7 +69,9 @@ function tickBuffs(e, dt) {
     if (b.dot) { b.tick -= dt; if (b.tick <= 0) { b.tick += 1; if (b.src && !e.dead) dealDamage(b.src, e, b.dot, { dot: true, threat: 1, noCrit: true }); } }
     if (b.hot) { b.tick -= dt; if (b.tick <= 0) { b.tick += 1; heal(b.src || e, e, b.hot, true); } }
   }
-  e.buffs = e.buffs.filter(b => b.t > 0 && !(b.absorb !== undefined && b.absorb <= 0));
+  const keep = [];
+  for (const b of e.buffs) { if (b.t > 0 && !(b.absorb !== undefined && b.absorb <= 0)) keep.push(b); else if (b.bloom && !e.dead) { heal(b.bloom, e, e.maxHp * .15); sparkle(e, '#8affe0'); } }
+  e.buffs = keep;
 }
 
 /* ---------- Combat core ---------- */
@@ -74,6 +79,7 @@ function gaugeAdd(v) { const m = P.handan && P.handan.tal('lanternsoul') ? 1.5 :
 function dealDamage(src, tgt, amt, o = {}) {
   if (!tgt || tgt.dead || amt <= 0) return 0;
   if (tgt.evade) { floatText(tgt.x, tgt.y - 40, 'Evade', '#ccc'); return 0; }
+  if (tgt.iframes > 0) { if (!o.dot) floatText(tgt.x, tgt.y - 44, 'Dodged', '#c9f5df', .85); return 0; }
   let d = amt * rnd(.92, 1.08) * mod(src, 'dmgDone');
   let crit = false;
   if (!o.noCrit && Math.random() < (src.crit || 0)) { d *= 1.75; crit = true; }
@@ -101,6 +107,7 @@ function dealDamage(src, tgt, amt, o = {}) {
     if (tgt.key === 'orhun') { P.orhun.res = Math.min(100, P.orhun.res + (d / tgt.maxHp) * 90 * (tgt.tal('ragengine') ? 1.5 : 1)); }
     if (o.melee && tgt.buffs.some(b => b.riposte) && !src.dead) { setTimeout(() => dealDamage(tgt, src, tgt.atk * .6, { threat: 2, label: 'Riposte' }), 120); }
     if (src.def && src.def.drain) heal(src, src, d * .5, true);
+    if (src.def && src.def.chill && !o.dot) addBuff(tgt, { id: 'chill', name: 'Chilled', dur: 3, mods: { speed: .65 }, col: '#9fdcff', debuff: true });
     if (src.def && src.def.poison && !o.dot && Math.random() < .5) addBuff(tgt, { id: 'poison', name: 'Venom', dur: 5, dot: src.atk * .25, src, col: '#8aff5a', debuff: true });
     if (tgt.hero && tgt.hp > 0 && tgt.hp / tgt.maxHp < .3 && !tgt.lowWarned) { tgt.lowWarned = true; }
   }
@@ -151,6 +158,9 @@ function foeTarget(f) {
   return best;
 }
 function kill(e, src) {
+  if (e.key === 'orhun' && P.handan.tal('phoenix') && !P.handan.dead && !G.phoenixUsed) {
+    G.phoenixUsed = true; e.hp = Math.round(e.maxHp * .3); sparkle(e, '#ffd27a'); burstFx(e.x, e.y - 20, 40, '#ffd27a', 16); floatText(e.x, e.y - 70, 'Phoenix Thread!', '#ffd27a', 1.2); sfx('heal'); return;
+  }
   e.hp = 0; e.dead = true; e.buffs = [];
   if (e.team === 'foe') {
     e.deathT = 0;
@@ -170,7 +180,7 @@ function kill(e, src) {
       G.bossDead[e.type] = true; sfx('boom'); shake(10);
       banner(d.name, 'Defeated');
       for (const f of G.foes) if (!f.dead && f.summoned) { f.hp = 0; f.dead = true; f.deathT = 0; burstFx(f.x, f.y - 10, 16, '#7a5aa8', 8); }
-      G.teles = []; G.pools = [];
+      G.teles = []; G.pools = []; G.eclipse = false; G.blizzard = false;
       saveGame(true);
     }
     burstFx(e.x, e.y - 10, 26, d.boss ? '#e0a64e' : '#7a5aa8', 14);
@@ -199,13 +209,14 @@ function log(msg, col = '#d9d4c6') { const el = $('log'); const d = document.cre
 
 /* ---------- Abilities ---------- */
 function abilityList(h) { return ABIL[h.key]; }
+function acost(h, a) { return a.costFn ? a.costFn(h) : a.cost; }
 function abilityReady(h, a) {
   if (G.level < a.lvl) return 'locked';
   if (h.dead) return 'dead';
   if (has(h, 'stun')) return 'stunned';
   if ((h.cds[a.id] || 0) > 0) return 'cd';
   if (h.gcd > 0 && a.cd !== undefined) return 'gcd';
-  if (h.key === 'orhun' ? h.res < a.cost : h.res < a.cost) return 'res';
+  if (h.res < acost(h, a)) return 'res';
   return 'ok';
 }
 function resolveTarget(h, a, explicit) {
@@ -238,8 +249,8 @@ function useAbility(h, idx, explicit, quiet) {
     if (a.minRange && d < a.minRange * TILE) { say('Too close'); return false; }
     if (a.range > 3 && !lineClear(h.x, h.y - 10, t.x, t.y - 10, 3)) { say('No line of sight'); return false; }
   }
-  if (h.key === 'orhun') h.res = Math.min(100, h.res - a.cost + (a.gain || 0) * (h.tal('ragengine') ? 1.5 : 1));
-  else h.res -= a.cost;
+  if (h.key === 'orhun') h.res = Math.min(100, h.res - acost(h, a) + (a.gain || 0) * (h.tal('ragengine') ? 1.5 : 1));
+  else h.res -= acost(h, a);
   h.cds[a.id] = Math.max(0, a.cd + (a.cdMod ? a.cdMod(h) : 0));
   h.gcd = GCD;
   if (t.team === 'foe') { if (h === ctrlHero()) { G.target = t; G.autoAtk = true; } h.target = t; h.face = t.x >= h.x ? 1 : -1; }
@@ -252,6 +263,7 @@ function useAbility(h, idx, explicit, quiet) {
 /* ---------- Hero updates ---------- */
 function heroTick(h, dt) {
   h.t += dt;
+  if (h.iframes > 0) h.iframes -= dt;
   if (h.dead) {
     if (!G.inCombat && !(P.orhun.dead && P.handan.dead)) { h.reviveT += dt; if (h.reviveT > 4) { h.dead = false; h.hp = Math.round(h.maxHp * .35); h.lowWarned = false; const o = h === P.orhun ? P.handan : P.orhun; h.x = o.x + 20; h.y = o.y + 10; sparkle(h, '#fff2b0'); log(h.name + ' is back on their feet.', '#8affe0'); } }
     return;
@@ -294,7 +306,8 @@ function moveHero(h, vx, vy, dt) {
   if (len < .01) { h.moving = false; return; }
   vx /= len; vy /= len;
   const tile = G.zone.get(Math.floor(h.x / TILE), Math.floor(h.y / TILE));
-  const sp = HERO[h.key] ? HERO[h.key].speed : 140;
+  const sp = (HERO[h.key] ? HERO[h.key].speed : 140) * mod(h, 'speed');
+  h.lastMv = [vx, vy]; h.lastMvT = G.t;
   const slow = tile === T.MARSH ? .72 : 1;
   const ox = h.x, oy = h.y;
   moveEnt(h, vx * sp * slow * dt, vy * sp * slow * dt);
@@ -395,6 +408,7 @@ function heroAI(h, dt) {
         else { h.moving = false; h.face = t.x >= h.x ? 1 : -1; h.dir = 2; }
       }
     }
+    { const tl = G.teles.find(p => p.harm && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 4 && p.t > p.dur * .5); if (tl && !(h.cds.dodge > 0)) { dodge(h, h.x - tl.x, h.y - tl.y); return; } }
     // Orhun dodges telegraphs too
     if (h.key === 'orhun') { const tl = G.teles.find(p => p.harm && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 6 && p.t > p.dur * .35); if (tl) { const a = Math.atan2(h.y - tl.y, h.x - tl.x); moveHero(h, Math.cos(a), Math.sin(a), dt); } }
     return;
@@ -425,7 +439,7 @@ function foxTick(f, dt) {
     if (ctrlHero() && G.target && G.target.team === 'foe' && !G.target.dead && G.target.aggro) t = G.target;
     const d = dist(f, t) - t.r - f.r;
     if (d > 14) steer(f, t.x + (f.x < t.x ? -t.r : t.r), t.y + 4, dt, 165, 6);
-    else { f.moving = false; f.face = t.x >= f.x ? 1 : -1; f.autoT -= dt; if (f.autoT <= 0) { f.autoT = 1.3; dealDamage(f, t, f.atk, { threat: 1 }); } }
+    else { f.moving = false; f.face = t.x >= f.x ? 1 : -1; f.autoT -= dt; if (f.autoT <= 0) { f.autoT = 1.3; dealDamage(f, t, f.atk, { threat: 1 }); if (P.handan.tal('lumenfury') && !t.dead) { addBuff(t, { id: 'lchill', name: 'Chilled', dur: 3, mods: { speed: .7 }, col: '#9fdcff' }); heal(P.handan, P.handan, P.handan.maxHp * .02, true); } } }
   } else followLeader(f, P.handan, dt, 2);
 }
 
@@ -471,7 +485,7 @@ function foeTick(f, dt) {
   const d = dist(f, tgt) - tgt.r - f.r;
   const range = f.def.range;
   const hasLos = !f.def.ranged || lineClear(f.x, f.y - 10, tgt.x, tgt.y - 10, 3);
-  if ((d > range || !hasLos) && !rooted) steer(f, tgt.x, tgt.y, dt, f.def.spd * (f.enraged ? 1.15 : 1), f.def.ranged ? 0 : tgt.r + f.r + range * .5);
+  if ((d > range || !hasLos) && !rooted) steer(f, tgt.x, tgt.y, dt, f.def.spd * (f.enraged ? 1.15 : 1) * mod(f, 'speed'), f.def.ranged ? 0 : tgt.r + f.r + range * .5);
   else f.moving = false;
   // separation
   for (const o of G.foes) { if (o === f || o.dead) continue; const dd = dist(o, f), m = o.r + f.r; if (dd < m && dd > .1) { const p = (m - dd) * .5; moveEnt(f, (f.x - o.x) / dd * p, (f.y - o.y) / dd * p); } }
@@ -495,7 +509,7 @@ function bossPull(f) {
   const lines = BANTER[f.type];
   if (lines && !G.seenBanter[f.type]) { G.seenBanter[f.type] = true; playDialog(lines.map(([w, t]) => ({ who: w, text: t }))); }
   if (!G.target || G.target.dead) { G.target = f; }
-  banner(f.name, f.type === 'gnarl' ? 'Beast of the Shrine' : f.type === 'witch' ? 'Mistress of Murkfen' : 'Lord of the Hollow');
+  banner(f.name, { gnarl: 'Beast of the Shrine', witch: 'Mistress of Murkfen', king: 'Lord of the Hollow', wyrm: 'The Cold Crown' }[f.type] || '');
 }
 function tele(x, y, r, dur, onEnd, col = '#ff4a3a', follow) { const t = { x, y, r, dur, t: 0, onEnd, col, harm: true, follow }; G.teles.push(t); return t; }
 function hitParty(x, y, r, src, amt) { for (const h of partyAlive()) if (Math.hypot(h.x - x, h.y - y) < r + h.r) dealDamage(src, h, amt, {}); }
@@ -526,6 +540,39 @@ function bossTick(f, tgt, dt) {
       b.cast = { name: 'Fen Rot', t: 1.4, dur: 1.4, end: () => sfx('tele') }; return castBlock();
     }
     if (b.adds <= 0) { b.adds = 18; b.cast = { name: 'Call the Fen', t: 1.6, dur: 1.6, end: () => { for (let i = 0; i < (b.blink ? 3 : 2); i++) { const [x, y] = arenaPoint(f, 6 * TILE); summon('mireling', x, y, P.orhun); } } }; return castBlock(); }
+  } else if (f.type === 'wyrm') {
+    if (b.breath === undefined) { b.breath = 5; b.tail = 9; b.spikes = 6; b.storm = 4; }
+    b.breath -= dt; b.tail -= dt;
+    if (hpP < .72 && !b.adds1) { b.adds1 = true; floatText(f.x, f.y - 100, 'The ice answers Vyrmhal!', '#bfe6ff', 1.2); for (let i = 0; i < 2; i++) { const [x, y] = arenaPoint(f, 5 * TILE); summon('rimeling', x, y, P.orhun); } }
+    if (hpP < .55 && !b.p2) { b.p2 = true; G.blizzard = true; banner('Whiteout', 'Vyrmhal calls the blizzard'); sfx('roar'); b.spikes = 2; }
+    if (hpP < .35 && !b.adds2) { b.adds2 = true; for (let i = 0; i < 3; i++) { const [x, y] = arenaPoint(f, 5 * TILE); summon('rimeling', x, y, P.orhun); } }
+    if (hpP < .22 && !b.p3) {
+      b.p3 = true; G.gauge = 100; sfx('beacon');
+      playDialog([{ who: 'handan', text: 'The pendant is burning again! The forge remembers it, Orhun!' }, { who: 'orhun', text: 'Then give it something to remember. Now!' }, { who: 'narrator', text: 'The Lantern gauge is full. Press F (or the lantern button) to unleash Lanternburst.' }]);
+    }
+    if (b.p2) {
+      b.spikes -= dt; b.storm -= dt;
+      if (b.storm <= 0) { b.storm = 4; for (const h of partyAlive()) dealDamage(f, h, f.atk * .22, { noCrit: true, dot: true }); }
+      if (b.spikes <= 0) {
+        b.spikes = 7; const spots = heroes().filter(h => !h.dead).map(h => [h.x, h.y]); spots.push(arenaPoint(f, 5 * TILE), arenaPoint(f, 5 * TILE));
+        for (const [x, y] of spots) tele(x, y, 1.4 * TILE, 1.5, () => { burstFx(x, y, 1.4 * TILE, '#bfe6ff', 10); sfx('crit'); hitParty(x, y, 1.4 * TILE, f, f.atk * 1.8); }, '#7ec8ff');
+      }
+    }
+    if (b.breath <= 0) {
+      b.breath = b.p2 ? 8 : 9.5; const a = Math.atan2(tgt.y - f.y, tgt.x - f.x); const pts = [];
+      for (let k = 1; k <= 5; k++) pts.push([f.x + Math.cos(a) * k * 1.45 * TILE, f.y + Math.sin(a) * k * 1.45 * TILE]);
+      for (const [x, y] of pts) tele(x, y, 1.2 * TILE, 1.7, null, '#7ec8ff');
+      b.cast = { name: 'Frost Breath', t: 1.7, dur: 1.7, end: () => {
+        sfx('whirl'); shake(7); const hit = new Set();
+        for (const [x, y] of pts) { burstFx(x, y, 1.2 * TILE, '#dff4ff', 8); for (const h of partyAlive()) if (!hit.has(h) && Math.hypot(h.x - x, h.y - y) < 1.2 * TILE + h.r) { hit.add(h); dealDamage(f, h, f.atk * 2.3, {}); addBuff(h, { id: 'chill', name: 'Chilled', dur: 4, mods: { speed: .6 }, col: '#9fdcff', debuff: true }); } }
+      } };
+      return castBlock();
+    }
+    if (b.tail <= 0) {
+      b.tail = b.p2 ? 8 : 10; const x = f.x, y = f.y; tele(x, y, 2.9 * TILE, 1.5, null, '#7ec8ff');
+      b.cast = { name: 'Tail Sweep', t: 1.5, dur: 1.5, end: () => { f.swing = 1; sfx('boom'); shake(9); burstFx(x, y, 2.9 * TILE, '#bfe6ff', 20); hitParty(x, y, 2.9 * TILE, f, f.atk * 2.4); } };
+      return castBlock();
+    }
   } else if (f.type === 'king') {
     if (b.cleave === undefined) { b.cleave = 6; b.orbs = 11; b.rings = 9; }
     b.cleave -= dt; b.orbs -= dt;
@@ -621,17 +668,18 @@ function giveItem(it) {
   refreshCharWin();
 }
 function qState(id) { return G.q[id] ? G.q[id].st : (QUESTS.find(q => q.id === id).pre.every(p => G.q[p] && G.q[p].st === 'done') ? 'avail' : 'locked'); }
+function qTurnin(q) { return q.turnin || q.giver; }
 function qProgress(type, key) {
   for (const q of QUESTS) {
     const s = G.q[q.id]; if (!s || s.st !== 'active') continue;
     let changed = false;
     q.obj.forEach((o, i) => {
       if (s.prog[i] >= o.n) return;
-      if ((o.t === 'kill' && type === 'kill' && o.e.includes(key)) || (o.t === 'collect' && type === 'collect' && o.item === key) || (o.t === 'boss' && type === 'boss' && o.e === key) || (o.t === 'beacon' && type === 'beacon' && o.id === key)) { s.prog[i]++; changed = true; toast(`${o.label}: ${s.prog[i]}/${o.n}`); }
+      if ((o.t === 'kill' && type === 'kill' && o.e.includes(key)) || (o.t === 'collect' && type === 'collect' && o.item === key) || (o.t === 'boss' && type === 'boss' && o.e === key) || (o.t === 'beacon' && type === 'beacon' && o.id === key) || (o.t === 'visit' && type === 'visit' && o.zone === key)) { s.prog[i]++; changed = true; toast(`${o.label}: ${s.prog[i]}/${o.n}`); }
     });
     if (changed && q.obj.every((o, i) => s.prog[i] >= o.n)) {
-      if (q.id === 'q10') { s.st = 'done'; continue; }
-      s.st = 'ready'; sfx('quest'); toast(`<b>${q.name}</b> complete. Return to ${NPCS[q.giver].name}.`);
+      if (q.final) { s.st = 'done'; continue; }
+      s.st = 'ready'; sfx('quest'); toast(`<b>${q.name}</b> complete. Return to ${NPCS[qTurnin(q)].name}.`);
     }
     if (changed) renderTracker();
   }
@@ -639,7 +687,7 @@ function qProgress(type, key) {
 function acceptQuest(q) {
   G.q[q.id] = { st: 'active', prog: q.obj.map(() => 0) };
   // credit already-done objectives
-  q.obj.forEach((o, i) => { if (o.t === 'boss' && G.bossDead[o.e]) G.q[q.id].prog[i] = 1; if (o.t === 'beacon' && G.beacons[o.id]) G.q[q.id].prog[i] = 1; });
+  q.obj.forEach((o, i) => { if (o.t === 'visit' && G.zone && G.zone.id === o.zone) G.q[q.id].prog[i] = 1; if (o.t === 'boss' && G.bossDead[o.e]) G.q[q.id].prog[i] = 1; if (o.t === 'beacon' && G.beacons[o.id]) G.q[q.id].prog[i] = 1; });
   if (q.obj.every((o, i) => G.q[q.id].prog[i] >= o.n)) G.q[q.id].st = 'ready';
   sfx('quest'); toast(`Quest accepted: <b>${q.name}</b>`); log('Quest accepted: ' + q.name, '#e0a64e');
   renderTracker(); saveGame(true);
@@ -651,6 +699,7 @@ function turnIn(q) {
   if (q.item) giveItem(randomItem(G.level + 1, q.item));
   sfx('quest'); toast(`<b>${q.name}</b> turned in. +${q.xp} xp, +${q.gold}g`);
   if (q.id === 'q9') { G.gateOpen = true; toast('The throne gate grinds open.'); }
+  if (q.id === 'q15') { G.frostGate = true; toast('The ice gate melts away. The forge road is open.'); }
   renderTracker(); saveGame(true);
 }
 
@@ -663,7 +712,7 @@ function interact(h = ctrlHero()) {
   const b = nearestBeacon(undefined, h);
   if (b) {
     if (G.beacons[b.id]) { toast('The beacon burns bright.'); return; }
-    const bossFor = { b1: 'gnarl', b2: 'witch', b3: 'king' }[b.id];
+    const bossFor = BEACON_BOSS[b.id];
     if (!G.bossDead[bossFor]) { toast('The Hollow still guards this beacon.'); return; }
     relight(b); return;
   }
@@ -674,6 +723,7 @@ function relight(b) {
   burstFx((b.x + .5) * TILE, (b.y + .5) * TILE - 20, 70, '#ffd86a', 30);
   qProgress('beacon', b.id);
   if (b.id === 'b3') { setTimeout(showEnding, 2500); saveGame(true); return; }
+  if (b.id === 'b4') { setTimeout(showEnding2, 2500); saveGame(true); return; }
   banner('Beacon relit', b.id === 'b1' ? 'Brightfield breathes again' : 'The fog of Murkfen recedes');
   const lines = BANTER[b.id]; if (lines) setTimeout(() => playDialog(lines.map(([w, t]) => ({ who: w, text: t }))), 900);
   saveGame(true);
@@ -687,7 +737,7 @@ function lanternburst(who) {
   G.fx.push({ k: 'flash', t: 0, dur: .6 });
   for (const h of heroes()) { if (h.dead) { h.dead = false; h.hp = 1; h.x = c.x + rnd(-20, 20); h.y = c.y + rnd(-10, 10); } heal(P.handan, h, h.maxHp * .45); }
   const dmg = (P.orhun.atk + P.handan.atk) * 3.2;
-  for (const f of foesNear(c, 6 * TILE)) { let d = dmg; if (f.type === 'king' && f.bs.p3) d += f.maxHp * .12; dealDamage(P.handan, f, d, { noCrit: true, threat: .5 }); }
+  for (const f of foesNear(c, 6 * TILE)) { let d = dmg; if ((f.type === 'king' || f.type === 'wyrm') && f.bs.p3) d += f.maxHp * (f.type === 'wyrm' ? .1 : .12); dealDamage(P.handan, f, d, { noCrit: true, threat: .5 }); }
   floatText(c.x, c.y - 80, 'LANTERNBURST', '#c9f5df', 1.6);
 }
 function drinkPotion(c = ctrlHero()) {
@@ -695,6 +745,7 @@ function drinkPotion(c = ctrlHero()) {
   if (G.potions <= 0) { floatText(c.x, c.y - 60, 'No Healing Draughts', '#ff9a8a', .85); sfx('deny'); return; }
   if (c.dead) return;
   G.potions--; G.potCd = 20; heal(c, c, c.maxHp * .45); sparkle(c, '#ff8a7a'); sfx('heal');
+  if (c.key === 'orhun' && c.tal('secondwind')) { c.res = Math.min(100, c.res + 30); addBuff(c, { id: 'secondwind', name: 'Second Wind', dur: 6, mods: { dmgTaken: .8 }, col: '#ff8a7a' }); }
 }
 function swapHero(silent) {
   if (G.coop) return;
@@ -719,8 +770,8 @@ function enterZone(id, entryKey, pos) {
   if (!z.base) renderZone(z);
   G.zone = z; G.foes = []; G.proj = []; G.teles = []; G.pools = []; G.fx = []; G.texts = []; G.target = null; G.autoAtk = false; G.eclipse = false; G.moveTo = null;
   for (const s of z.spawns) { if (FOES[s.type].boss && G.bossDead[s.type]) continue; G.foes.push(makeFoe(s.type, s.x, s.y)); }
-  G.npcs = z.npcs.map(n => ({ ...n, x: (n.x + .5) * TILE, y: (n.y + .5) * TILE, t: Math.random() * 5 }));
-  let p = pos || z.entries[entryKey] || z.entries.start || z.entries.west;
+  G.npcs = z.npcs.filter(n => !n.req || n.req()).map(n => ({ ...n, x: (n.x + .5) * TILE, y: (n.y + .5) * TILE, t: Math.random() * 5 }));
+  let p = pos || z.entries[entryKey] || z.entries.start || z.entries.west || Object.values(z.entries)[0];
   const px = pos ? pos[0] : (p[0]) * TILE, py = pos ? pos[1] : (p[1]) * TILE;
   const c = ctrlHero(), o = otherHero();
   c.x = px; c.y = py; o.x = px - 20; o.y = py + 14; P.fox.x = px - 10; P.fox.y = py + 24;
@@ -729,7 +780,10 @@ function enterZone(id, entryKey, pos) {
   $('zonename').textContent = z.name;
   G.lastSafe = { zone: id, pos: [px, py] };
   if (BANTER[z.name] && !G.seenBanter[z.name]) { G.seenBanter[z.name] = true; setTimeout(() => playDialog(BANTER[z.name].map(([w, t]) => ({ who: w, text: t }))), 700); }
-  banner(z.name, { town: 'The last city of lantern light', brightfield: 'Meadows under a bruised sky', murkfen: 'Where the fog keeps its dead', keep: 'Seat of the Hollow King' }[id]);
+  G.blizzard = false; G.eclipse = false;
+  qProgress('visit', id);
+  if (id === 'town' && ch1Done() && !G.seenBanter.ch2 && !(G.q.q11)) { G.seenBanter.ch2 = true; setTimeout(() => playDialog(BANTER.ch2.map(([w, t]) => ({ who: w, text: t }))), 900); }
+  banner(z.name, { frostspire: 'Where the first flame was forged', town: 'The last city of lantern light', brightfield: 'Meadows under a bruised sky', murkfen: 'Where the fog keeps its dead', keep: 'Seat of the Hollow King' }[id]);
   renderTracker();
 }
 let zoneLock = 0;
@@ -740,8 +794,9 @@ function checkPortals() {
   for (const p of G.zone.portals) {
     const hit = who.find(h => { const hx = h.x / TILE, hy = h.y / TILE; return hx >= p.x - .3 && hx <= p.x + p.w + .3 && hy >= p.y && hy <= p.y + p.h; });
     if (hit) { const c = hit; {
-      if (p.req && !p.req()) { toast(p.lock); zoneLock = 2; c.x += (p.x < G.zone.w / 2 ? 1 : -1) * 40; return; }
-      if (G.inCombat) { toast('You cannot leave while in combat.'); zoneLock = 1.5; c.x += (p.x < G.zone.w / 2 ? 1 : -1) * 40; return; }
+      const push = p.push || [p.x < G.zone.w / 2 ? 40 : -40, 0];
+      if (p.req && !p.req()) { toast(p.lock); zoneLock = 2; c.x += push[0]; c.y += push[1]; return; }
+      if (G.inCombat) { toast('You cannot leave while in combat.'); zoneLock = 1.5; c.x += push[0]; c.y += push[1]; return; }
       zoneLock = 1.5;
       fadeTo(() => { enterZone(p.to, p.entry); saveGame(true); });
       return;
@@ -767,16 +822,13 @@ function update(dt) {
   zoneLock = Math.max(0, zoneLock - dt);
   G.potCd = Math.max(0, G.potCd - dt);
   G.inCombat = G.foes.some(f => f.aggro && !f.dead && !f.evade);
+  if (!G.inCombat) G.phoenixUsed = false;
   if (G.inCombat) G.combatT += dt; else G.combatT = 0;
   if (G.wipeT > 0) { G.wipeT -= dt; if (G.wipeT <= 0) wipe(); }
   const c = ctrlHero();
   // controlled movement
   if (!c.dead && !c.dash) {
-    let vx = 0, vy = 0;
-    const ar = !G.coop;
-    if (keys['w'] || (ar && keys['arrowup'])) vy -= 1; if (keys['s'] || (ar && keys['arrowdown'])) vy += 1;
-    if (keys['a'] || (ar && keys['arrowleft'])) vx -= 1; if (keys['d'] || (ar && keys['arrowright'])) vx += 1;
-    if (window.JOY && JOY.active && JOY.mag > .18) { vx += JOY.vx; vy += JOY.vy; }
+    const [vx, vy] = inputVec(1);
     if (vx || vy) { G.moveTo = null; c.path = null; moveHero(c, vx, vy, dt); }
     else if (G.moveTo) {
       const m = G.moveTo;
@@ -787,9 +839,8 @@ function update(dt) {
   }
   if (G.coop) {
     const h2 = P.handan;
-    if (!h2.dead && !h2.dash) {
-      let vx = 0, vy = 0;
-      if (keys['arrowup']) vy -= 1; if (keys['arrowdown']) vy += 1; if (keys['arrowleft']) vx -= 1; if (keys['arrowright']) vx += 1;
+    if (!h2.dead && !h2.dash && !G.mounted) {
+      const [vx, vy] = inputVec(2);
       if (vx || vy) moveHero(h2, vx, vy, dt); else h2.moving = false;
     }
   }
@@ -821,6 +872,50 @@ function update(dt) {
   G.saveT += dt; if (G.saveT > 30 && !G.inCombat) { G.saveT = 0; saveGame(true); }
 }
 function pickupActive(p) {
-  const map = { moonpetal: 'q2', token: 'q5', shard: 'q9' };
+  const map = { moonpetal: 'q2', token: 'q5', shard: 'q9', ember: 'q13' };
   const s = G.q[map[p.item]]; return s && s.st === 'active';
+}
+
+/* ---------- Input vectors (keyboard, touch stick, gamepads) ---------- */
+var PADV = [[0, 0], [0, 0]];
+function inputVec(player) {
+  let vx = 0, vy = 0;
+  if (player === 1) {
+    const ar = !G.coop;
+    if (keys['w'] || (ar && keys['arrowup'])) vy -= 1; if (keys['s'] || (ar && keys['arrowdown'])) vy += 1;
+    if (keys['a'] || (ar && keys['arrowleft'])) vx -= 1; if (keys['d'] || (ar && keys['arrowright'])) vx += 1;
+    if (window.JOY && JOY.active && JOY.mag > .18) { vx += JOY.vx; vy += JOY.vy; }
+    vx += PADV[0][0]; vy += PADV[0][1];
+  } else {
+    if (keys['arrowup']) vy -= 1; if (keys['arrowdown']) vy += 1; if (keys['arrowleft']) vx -= 1; if (keys['arrowright']) vx += 1;
+    vx += PADV[1][0]; vy += PADV[1][1];
+  }
+  return [vx, vy];
+}
+
+/* ---------- Dodge: Orhun rolls, Handan steps through the jade ---------- */
+const DODGE = { orhun: { cd: 6, dist: 3.2 * TILE, ifr: .45, name: 'Combat Roll' }, handan: { cd: 8, dist: 4 * TILE, ifr: .35, name: 'Jade Step' } };
+function dodge(h, dx = 0, dy = 0) {
+  if (!h || h.dead || h.dash || has(h, 'stun')) return false;
+  const human = G.coop || h === ctrlHero();
+  if ((h.cds.dodge || 0) > 0) { if (human) { floatText(h.x, h.y - 60, 'Not ready yet', '#ff9a8a', .85); sfx('deny'); } return false; }
+  if (!dx && !dy) {
+    if (human) { const v = inputVec(G.coop && h.key === 'handan' ? 2 : 1); dx = v[0]; dy = v[1]; }
+    if (!dx && !dy && h.lastMv && G.t - (h.lastMvT || 0) < .25) { dx = h.lastMv[0]; dy = h.lastMv[1]; }
+    if (!dx && !dy) { const near = G.foes.filter(f => !f.dead && f.aggro).sort((a, b) => dist(a, h) - dist(b, h))[0]; if (near) { dx = h.x - near.x; dy = h.y - near.y; } }
+    if (!dx && !dy) { dx = h.face || 1; dy = 0; }
+  }
+  const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+  const D = DODGE[h.key];
+  h.cds.dodge = D.cd; h.iframes = D.ifr;
+  h.buffs = h.buffs.filter(b => !(b.mods && (b.mods.root || b.mods.speed)));
+  if (Math.abs(dx) > Math.abs(dy)) { h.dir = 2; h.face = dx > 0 ? 1 : -1; } else h.dir = dy > 0 ? 0 : 1;
+  if (h.key === 'orhun') { h.dash = { vx: dx, vy: dy, left: D.dist, sp: 600, roll: true, onEnd: null }; sfx('slash'); }
+  else {
+    sparkle(h, '#7dffc8'); ring(h.x, h.y, 24, '#46c495');
+    for (let s = 0; s < D.dist; s += 6) { const ox = h.x, oy = h.y; moveEnt(h, dx * 6, dy * 6); h.blockedX = h.blockedY = false; if (h.x === ox && h.y === oy) break; }
+    sparkle(h, '#c9f5df'); ring(h.x, h.y, 30, '#7dffc8'); sfx('tele');
+  }
+  if (human) flashSlot('dodge', h.key);
+  return true;
 }

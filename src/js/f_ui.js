@@ -40,6 +40,7 @@ function render(dt) {
     const X = (p.x + .5) * TILE, Y = (p.y + .5) * TILE, bob = Math.sin(t * 3 + p.x) * 2;
     g.fillStyle = 'rgba(200,255,230,.18)'; g.beginPath(); g.ellipse(X, Y + 4, 14, 6, 0, 0, 7); g.fill();
     if (p.item === 'moonpetal') { g.fillStyle = '#3a6a3a'; g.fillRect(X - 1, Y - 6, 2, 10); for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28 + t * .3; g.fillStyle = '#d8e8ff'; g.beginPath(); g.ellipse(X + Math.cos(a) * 5, Y - 9 + Math.sin(a) * 4 + bob, 3.5, 2.2, a, 0, 7); g.fill(); } g.fillStyle = '#ffe9a0'; g.beginPath(); g.arc(X, Y - 9 + bob, 2, 0, 7); g.fill(); }
+    else if (p.item === 'ember') { g.fillStyle = 'rgba(160,210,240,.55)'; g.beginPath(); g.moveTo(X - 9, Y + 2); g.lineTo(X - 6, Y - 14 + bob); g.lineTo(X + 7, Y - 16 + bob); g.lineTo(X + 10, Y + 2); g.closePath(); g.fill(); g.fillStyle = '#ff9a3a'; g.shadowColor = '#ffaa44'; g.shadowBlur = 10; g.beginPath(); g.arc(X, Y - 6 + bob, 4, 0, 7); g.fill(); g.shadowBlur = 0; g.fillStyle = '#fff2c0'; g.fillRect(X - 1, Y - 8 + bob, 2, 2); }
     else if (p.item === 'token') { g.fillStyle = '#e0a64e'; g.beginPath(); g.arc(X, Y - 8 + bob, 6, 0, 7); g.fill(); g.fillStyle = '#7a5420'; g.fillRect(X - 2, Y - 11 + bob, 4, 6); g.fillStyle = '#fff2c0'; g.fillRect(X - 1, Y - 10 + bob, 2, 2); }
     else { g.fillStyle = '#46c495'; g.beginPath(); g.moveTo(X, Y - 22 + bob); g.lineTo(X + 7, Y - 8 + bob); g.lineTo(X, Y + 2 + bob); g.lineTo(X - 7, Y - 8 + bob); g.closePath(); g.fill(); g.fillStyle = '#c9f5df'; g.beginPath(); g.moveTo(X, Y - 20 + bob); g.lineTo(X + 3, Y - 9 + bob); g.lineTo(X, Y - 4 + bob); g.closePath(); g.fill(); }
   }
@@ -61,8 +62,12 @@ function render(dt) {
   for (const b of z.beacons) ds.push({ y: (b.y + .5) * TILE + 8, f: () => drawBeacon(g, b, t) });
   for (const n of G.npcs) if (inView(n.x, n.y)) ds.push({ y: n.y, f: () => drawNpc(g, n, t) });
   for (const f of G.foes) if (inView(f.x, f.y, 120)) ds.push({ y: f.y, f: () => drawFoe(g, f) });
-  for (const h of heroes()) ds.push({ y: h.y, f: () => drawHero(g, h) });
-  if (!P.fox.dead && !P.handan.dead) ds.push({ y: P.fox.y, f: () => drawFox(g, P.fox) });
+  if (G.mounted) { const d = ctrlHero(); ds.push({ y: d.y, f: () => drawMount(g, d) }); }
+  else {
+    for (const h of heroes()) ds.push({ y: h.y, f: () => drawHero(g, h) });
+    if (!P.fox.dead && !P.handan.dead) ds.push({ y: P.fox.y, f: () => drawFox(g, P.fox) });
+  }
+  if (z.waystone && waystoneOpen(z.id)) { const X = (z.waystone.x + .5) * TILE, Y = z.waystone.y * TILE; ds.push({ y: Y + 24, f: () => { g.fillStyle = `rgba(125,255,200,${.55 + Math.sin(t * 3) * .25})`; g.fillRect(X - 2, Y - 8, 4, 12); g.fillRect(X - 4, Y - 4, 8, 3); g.fillStyle = 'rgba(125,255,200,.18)'; g.beginPath(); g.ellipse(X, Y + 26, 18, 7, 0, 0, 7); g.fill(); } }); }
   for (const d of z.decor) if (d.type === 'lantern' || d.type === 'brazier' || d.type === 'campfire') { }
   ds.sort((a, b) => a.y - b.y); for (const d of ds) d.f();
 
@@ -75,6 +80,7 @@ function render(dt) {
     else if (f.k === 'ring') { g.globalAlpha = 1 - u; g.strokeStyle = f.col; g.lineWidth = 3 * (1 - u) + 1; g.beginPath(); g.ellipse(f.x, f.y, f.r * (.3 + u * .7), f.r * (.3 + u * .7) * .7, 0, 0, 7); g.stroke(); }
     else if (f.k === 'slash') { g.globalAlpha = 1 - u; g.strokeStyle = f.big ? '#ffb08a' : '#f4f6ff'; g.lineWidth = f.big ? 4 : 2.5; g.beginPath(); g.arc(f.x, f.y, f.big ? 22 : 15, f.a + u * 2, f.a + u * 2 + 1.6); g.stroke(); }
     else if (f.k === 'spin') { g.globalAlpha = (1 - u) * .8; g.strokeStyle = f.col; g.lineWidth = 3; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(f.x, f.y, f.r * (.5 + i * .2), u * 9 + i * 2, u * 9 + i * 2 + 2.2); g.stroke(); } }
+    else if (f.k === 'heart') { if (f.t < 0) continue; const s2 = (f.s || 1) * (1 + Math.min(1, f.t * 6) * .3); drawHeart(g, f.x, f.y - u * 34, 13 * s2, `rgba(255,${110 + 40 * (1 - u)},150,${1 - u * u})`); }
     else if (f.k === 'vines' && f.e && !f.e.dead) { g.globalAlpha = Math.min(1, (f.dur - f.t) * 2); g.strokeStyle = '#6aa04a'; g.lineWidth = 2; for (let i = 0; i < 5; i++) { const a = i * 1.25 + f.t; g.beginPath(); g.moveTo(f.e.x + Math.cos(a) * 14, f.e.y + 2); g.quadraticCurveTo(f.e.x + Math.cos(a) * 18, f.e.y - 14, f.e.x + Math.cos(a + 1) * 6, f.e.y - 18 - (i % 2) * 6); g.stroke(); } }
     g.globalAlpha = 1;
   }
@@ -113,7 +119,7 @@ function render(dt) {
   }
   // beacon prompt
   const nb = nearestBeacon();
-  if (nb && !G.beacons[nb.id] && G.bossDead[{ b1: 'gnarl', b2: 'witch', b3: 'king' }[nb.id]]) { textOutlined(g, 'Press E to relight the beacon', (nb.x + .5) * TILE, nb.y * TILE - 50, '#c9f5df', 13); }
+  if (nb && !G.beacons[nb.id] && G.bossDead[BEACON_BOSS[nb.id]]) { textOutlined(g, 'Press E to relight the beacon', (nb.x + .5) * TILE, nb.y * TILE - 50, '#c9f5df', 13); }
   const nn = nearestNpc();
   if (nn && !G.dialog) textOutlined(g, 'E  Talk to ' + NPCS[nn.id].name, nn.x, nn.y + 22, '#f2e6c8', 12);
   // barks
@@ -146,6 +152,23 @@ function render(dt) {
 function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function textOutlined(g, s, x, y, col, size) { g.font = `700 ${size}px "Alegreya Sans", sans-serif`; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(s, x, y); g.fillStyle = col; g.fillText(s, x, y); }
 
+function drawHeart(g, x, y, r, col) {
+  g.fillStyle = col; g.beginPath(); g.moveTo(x, y + r * .9);
+  g.bezierCurveTo(x - r * 1.3, y - r * .1, x - r * .7, y - r * 1.1, x, y - r * .35);
+  g.bezierCurveTo(x + r * .7, y - r * 1.1, x + r * 1.3, y - r * .1, x, y + r * .9); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.arc(x - r * .38, y - r * .38, r * .18, 0, 7); g.fill();
+}
+function drawMount(g, d) {
+  const face = d.face || 1, f = P.fox, bob = d.moving ? Math.abs(Math.sin(d.t * 9)) * 2 : 0;
+  const fx = { x: 0, y: 0, t: f.t || d.t, face, moving: d.moving };
+  g.save(); g.translate(d.x, d.y + 4); g.scale(4.3, 4.3); drawFox(g, fx); g.restore();
+  drawHumanoid(g, 'handan', LOOKS.handan, d.x - 12 * face, d.y - 30 - bob, 2, 0, face < 0);
+  drawHumanoid(g, 'orhun', LOOKS.orhun, d.x + 6 * face, d.y - 28 - bob, 2, 0, face < 0);
+  // Lumen's head and tail tip in front of the riders
+  g.save(); g.translate(d.x + 34 * face, d.y - 43 - bob * .5); g.fillStyle = '#46c495'; g.beginPath(); g.ellipse(0, 0, 18, 15, 0, 0, 7); g.fill();
+  g.beginPath(); g.moveTo(-10 * face, -10); g.lineTo(-6 * face, -30); g.lineTo(2 * face, -12); g.fill(); g.beginPath(); g.moveTo(2 * face, -12); g.lineTo(10 * face, -28); g.lineTo(12 * face, -8); g.fill();
+  g.fillStyle = '#c9f5df'; g.fillRect(8 * face - (face < 0 ? 12 : 0), 2, 12, 7); g.fillStyle = '#0a1a14'; g.fillRect(4 * face - 3, -5, 6, 6); g.fillRect(18 * face - 2, 5, 4, 4); g.restore();
+}
 function drawHero(g, h) {
   if (h.dead) { g.save(); g.globalAlpha = .7; g.translate(h.x, h.y); g.rotate(1.57 * (h.face || 1)); drawHumanoid(g, h.key, LOOKS[h.key], 0, 10, 2, 0, false, .6); g.restore(); return; }
   const frame = h.swingT > 0 ? 3 : h.moving ? (Math.floor(h.t * 8) % 2 ? 1 : 2) : 0;
@@ -153,17 +176,29 @@ function drawHero(g, h) {
   if (h.buffs.some(b => b.id === 'ward')) { g.fillStyle = 'rgba(138,255,224,.14)'; g.strokeStyle = 'rgba(138,255,224,.55)'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(h.x, h.y - 22, 20, 28, 0, 0, 7); g.fill(); g.stroke(); }
   if (h.buffs.some(b => b.id === 'ironhide')) { g.strokeStyle = 'rgba(159,195,238,.8)'; g.lineWidth = 2; g.beginPath(); g.ellipse(h.x, h.y - 22, 18, 26, 0, 0, 7); g.stroke(); }
   if (h.flash) g.filter = 'brightness(1.8) saturate(.5)';
+  if (h.iframes > 0) { g.save(); g.globalAlpha = h.key === 'handan' ? .35 : .7; }
   drawHumanoid(g, h.key, LOOKS[h.key], h.x, h.y, dir, frame, dir === 2 && h.face < 0);
+  if (h.iframes > 0) g.restore();
   g.filter = 'none';
   if (h.buffs.some(b => b.mods && b.mods.root)) { g.strokeStyle = '#6aa04a'; g.lineWidth = 2; g.beginPath(); g.ellipse(h.x, h.y, 12, 5, 0, 0, 7); g.stroke(); }
+}
+// Recolour a foe without canvas filters (slow on phones): draw offscreen, then wash it with the tint colour.
+const TCV = document.createElement('canvas'); TCV.width = 256; TCV.height = 224; const tcx = TCV.getContext('2d');
+function drawTintedFoe(g, f) {
+  tcx.setTransform(1, 0, 0, 1, 0, 0); tcx.globalCompositeOperation = 'source-over'; tcx.globalAlpha = 1; tcx.clearRect(0, 0, 256, 224);
+  drawFoeShape(tcx, f, 128, 180);
+  tcx.globalCompositeOperation = 'source-atop';
+  if (f.def.tint) { tcx.globalAlpha = f.def.tint.a * .8; tcx.fillStyle = f.def.tint.c; tcx.fillRect(0, 0, 256, 224); }
+  if (f.flash) { tcx.globalAlpha = .55; tcx.fillStyle = '#ffffff'; tcx.fillRect(0, 0, 256, 224); }
+  tcx.globalAlpha = 1; tcx.globalCompositeOperation = 'source-over';
+  g.drawImage(TCV, f.x - 128, f.y - 180);
 }
 function drawFoe(g, f) {
   const a = f.dead ? Math.max(0, 1 - f.deathT) : (f.evade ? .6 : 1);
   g.save(); g.globalAlpha = a;
-  if (f.flash) g.filter = 'brightness(2.2)';
   f.moving = f.moving && !f.dead;
-  drawFoeShape(g, f, f.x, f.y);
-  g.filter = 'none';
+  if (f.def.tint || (f.flash && f.def.boss)) drawTintedFoe(g, f);
+  else { if (f.flash) g.filter = 'brightness(2.2)'; drawFoeShape(g, f, f.x, f.y); g.filter = 'none'; }
   if (f.buffs.some(b => b.mods && b.mods.stun)) { for (let i = 0; i < 3; i++) { const ang = f.t * 5 + i * 2.1; g.fillStyle = '#ffe6a8'; g.fillRect(f.x + Math.cos(ang) * 10 - 1.5, f.y - 36 * (f.def.scale || 1) + Math.sin(ang) * 3, 3, 3); } }
   if (f.bs && f.bs.cast) { const c = f.bs.cast, w = 60, top = f.y - 14 - f.r * 2.6; g.fillStyle = '#000'; g.fillRect(f.x - w / 2 - 1, top - 1, w + 2, 7); g.fillStyle = '#e0a64e'; g.fillRect(f.x - w / 2, top, w * (1 - c.t / c.dur), 5); textOutlined(g, c.name, f.x, top - 4, '#ffd86a', 12); }
   g.restore();
@@ -187,7 +222,7 @@ function drawBeacon(g, b, t) {
   }
 }
 function npcMarker(id) {
-  for (const q of QUESTS) if (q.giver === id && G.q[q.id] && G.q[q.id].st === 'ready' && q.id !== 'q10') return { ch: '?', col: '#ffd86a' };
+  for (const q of QUESTS) if (qTurnin(q) === id && G.q[q.id] && G.q[q.id].st === 'ready' && !q.final) return { ch: '?', col: '#ffd86a' };
   for (const q of QUESTS) if (q.giver === id && qState(q.id) === 'avail') return { ch: '!', col: '#ffd86a' };
   for (const q of QUESTS) if (q.giver === id && G.q[q.id] && G.q[q.id].st === 'active') return { ch: '?', col: '#9a978e' };
   if (NPCS[id].vendor) return { ch: '$', col: '#f2c75c' };
@@ -199,7 +234,9 @@ function renderLights(g, z, cx, cy, t) {
   if (z.id === 'brightfield' && G.beacons.b1) dark -= .12;
   if (z.id === 'murkfen' && G.beacons.b2) dark -= .12;
   if (z.id === 'keep' && G.beacons.b3) dark -= .3;
+  if (z.id === 'frostspire' && G.beacons.b4) dark -= .18;
   if (G.eclipse) dark += .18;
+  if (G.blizzard) dark += .1;
   dark = clamp(dark, .05, .92);
   const lw = lightCv.width, lh = lightCv.height, s = ZOOM / 2;
   lctx.globalCompositeOperation = 'source-over';
@@ -222,6 +259,7 @@ function renderLights(g, z, cx, cy, t) {
     if (d.type === 'campfire') { L(X, d.y * TILE + 16, 190, 1); glows.push([X, d.y * TILE + 16, '#ff9a3a', 1.6, 'fire']); }
     if (d.type === 'window') { L(X + 4, d.y * TILE + 14, 60, .6); }
   }
+  if (z.waystone && waystoneOpen(z.id)) L((z.waystone.x + .5) * TILE, z.waystone.y * TILE, 110, .8);
   for (const b of z.beacons) { if (G.beacons[b.id]) L((b.x + .5) * TILE, b.y * TILE - 30, 420, 1); else L((b.x + .5) * TILE, b.y * TILE - 30, 50, .4); }
   for (const f of G.foes) if (!f.dead && f.def.light) L(f.x, f.y - 20, f.def.boss ? 160 : 90, .8);
   for (const p of G.proj) L(p.x, p.y, 50, .6);
@@ -231,6 +269,12 @@ function renderLights(g, z, cx, cy, t) {
   lctx.globalCompositeOperation = 'source-over';
   g.save(); g.setTransform(DPR, 0, 0, DPR, 0, 0);
   g.drawImage(lightCv, 0, 0, W, H);
+  if (z.snow) {
+    const n = G.blizzard ? 260 : 130, sp = G.blizzard ? 2.4 : 1;
+    g.fillStyle = 'rgba(240,248,255,.8)';
+    for (let i = 0; i < n; i++) { const a = hash2(i, 1, 7), b2 = hash2(i, 2, 7), sz = 1 + hash2(i, 3, 7) * 2.2; const x = ((a * (W + 80) + t * (14 + 30 * b2) * sp - cx * .3 + Math.sin(t * .8 + i) * 12) % (W + 80) + W + 80) % (W + 80) - 40; const y = ((b2 * (H + 40) + t * (34 + 40 * a) * sp - cy * .3) % (H + 40) + H + 40) % (H + 40) - 20; g.fillRect(x, y, sz, sz); }
+    if (G.blizzard) { g.fillStyle = 'rgba(200,225,255,.12)'; g.fillRect(0, 0, W, H); }
+  }
   if (z.fog) {
     g.globalAlpha = .12; g.fillStyle = '#9ac8b0';
     for (let i = 0; i < 6; i++) { const fx = ((i * 260 + t * 14 - cx * .6) % (W + 400)) - 200, fy = ((i * 170 - cy * .6) % (H + 200) + H + 200) % (H + 200) - 100; g.beginPath(); g.ellipse(fx, fy, 260, 50, 0, 0, 7); g.fill(); }
@@ -318,6 +362,7 @@ function updateHUD(dt) {
   } else tf.hidden = true;
   // action bar
   slotEls.forEach(s => {
+    if (s.dodge) { const hh = P[s.key], cd = hh.cds.dodge || 0; s.cdn.textContent = cd > 0 ? Math.ceil(cd) : ''; s.cd.style.setProperty('--p', (cd / DODGE[s.key].cd * 100) + '%'); return; }
     if (s.pot) { s.cdn.textContent = G.potCd > 0 ? Math.ceil(G.potCd) : ''; s.cd.style.setProperty('--p', (G.potCd / 20 * 100) + '%'); s.cost.textContent = '×' + G.potions; return; }
     const h = P[s.key], a = ABIL[s.key][s.i]; if (!a) return;
     const locked = G.level < a.lvl;
@@ -326,7 +371,7 @@ function updateHUD(dt) {
     const gcdP = h.gcd > 0 && cd <= 0 ? h.gcd / GCD : 0;
     s.cd.style.setProperty('--p', (Math.max(cd / total, gcdP) * 100) + '%');
     s.cdn.textContent = cd > 0 ? (cd < 10 ? cd.toFixed(1) : Math.ceil(cd)) : '';
-    s.el.classList.toggle('oom', h.res < a.cost);
+    s.el.classList.toggle('oom', h.res < acost(h, a));
   });
   const gp = Math.floor(G.gauge);
   $('gauge').querySelector('i').style.width = gp + '%'; $('gauge').classList.toggle('full', gp >= 100);
@@ -360,6 +405,13 @@ function buildActionBar() {
     bindTip(pe, () => `<div class="t">Healing Draught</div><div class="s">${G.potions} carried · 20s shared cooldown</div><div style="margin-top:4px">Restores 45% of the drinking hero's health. Sela and Dorrak supply them.</div>`);
     bar.appendChild(pe);
     slotEls.push({ el: pe, cd: pe.querySelector('.cd'), cdn: pe.querySelector('.cdn'), cost: pe.querySelector('.cost'), key, pot: true });
+    const de = document.createElement('div'); de.className = 'slot dodge';
+    de.innerHTML = `<canvas width="48" height="48"></canvas><div class="cd"></div><div class="cdn"></div><span class="key">${G.coop ? (key === 'handan' ? 'R⇧' : 'L⇧') : '⇧'}</span>`;
+    drawIcon(de.querySelector('canvas'), { bg: key === 'orhun' ? '#3a2a14' : '#0f3a30', fg: key === 'orhun' ? '#ffd9a0' : '#9ff5d0', s: key === 'orhun' ? 'roll' : 'blink' });
+    de.addEventListener('click', () => { if (TOUCH_UI) return; dodge(G.coop ? P[key] : ctrlHero()); });
+    bindTip(de, () => `<div class="t">${DODGE[key].name}</div><div class="s">${HERO[key].name} · ${DODGE[key].cd}s cooldown · Shift</div><div style="margin-top:4px">${key === 'orhun' ? 'Roll a few yards in the direction you are moving. Attacks pass through you while rolling.' : 'Step through the jade a few yards away. Attacks pass through you for a moment.'} Also breaks roots and chills.</div>`);
+    bar.appendChild(de);
+    slotEls.push({ el: de, cd: de.querySelector('.cd'), cdn: de.querySelector('.cdn'), cost: null, key, dodge: true, i: 'dodge' });
   });
 }
 function flashSlot(i, key) { const s = slotEls.find(x => !x.pot && x.key === key && x.i === i); if (!s) return; s.el.classList.add('flash'); setTimeout(() => s.el.classList.remove('flash'), 150); }
@@ -374,7 +426,7 @@ function renderTracker() {
   }
   el.innerHTML = act.slice(0, 4).map(q => {
     const s = G.q[q.id];
-    if (s.st === 'ready') return `<div class="q"><h4>${q.name}</h4><div class="o done">Return to ${NPCS[q.giver].name}</div></div>`;
+    if (s.st === 'ready') return `<div class="q"><h4>${q.name}</h4><div class="o done">Return to ${NPCS[qTurnin(q)].name}</div></div>`;
     return `<div class="q"><h4>${q.name}</h4>${q.obj.map((o, i) => `<div class="o ${s.prog[i] >= o.n ? 'done' : ''}">${o.label}: ${Math.min(s.prog[i], o.n)}/${o.n}</div>`).join('')}<div class="o" style="color:#8a877e;font-size:11px">${q.zone}</div></div>`;
   }).join('');
 }
@@ -424,7 +476,7 @@ $('dialog').addEventListener('click', advanceDialog);
 
 function talkTo(n) {
   const id = n.id; const npc = NPCS[id];
-  const ready = QUESTS.find(q => q.giver === id && G.q[q.id] && G.q[q.id].st === 'ready');
+  const ready = QUESTS.find(q => qTurnin(q) === id && G.q[q.id] && G.q[q.id].st === 'ready');
   if (ready) { playDialog([{ who: id, text: ready.done }], () => turnIn(ready)); return; }
   const avail = QUESTS.find(q => q.giver === id && qState(q.id) === 'avail');
   if (avail) {
@@ -555,7 +607,26 @@ function showEnding() {
     const w = $('ending'); w.hidden = false;
     w.innerHTML = `<h2 style="justify-content:center">The Ember Road is lit</h2>
       <p>Orhun and Handan relit all three beacons and broke the Hollow King. Lanternhold will see morning.</p>
+      ${G.q.q16 && G.q.q16.st === 'done' ? '' : '<p style="color:#9fdcff">But a cold wind is blowing down from the north. When you are ready, return to Lanternhold. Chapter II awaits.</p>'}
       <p style="color:#9a978e">Level ${G.level} · ${G.kills} Hollow defeated · ${G.gold} gold carried</p>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn primary" id="endStay">Keep exploring</button><button class="btn" id="endNew">Start a new journey</button></div>`;
+    $('endStay').onclick = () => { w.hidden = true; };
+    $('endNew').onclick = () => { w.hidden = true; newGame(); };
+  });
+}
+function showEnding2() {
+  G.ended = true;
+  playDialog([
+    { who: 'narrator', text: 'The Forge of the First Flame roars back to life. Far below, every lantern in Velmara burns a little brighter, and by morning the north road is green again.' },
+    { who: 'kael', text: 'Twenty years I watched that chimney. I never thought I would see smoke from it again.' },
+    { who: 'handan', text: 'The pendant is warm. It feels finished, like it was waiting for this the whole time.' },
+    { who: 'orhun', text: 'So what now? There are no more beacons left to light.' },
+    { who: 'handan', text: 'Now we walk home. Slowly. Together.' },
+  ], () => {
+    const w = $('ending'); w.hidden = false;
+    w.innerHTML = `<h2 style="justify-content:center">The First Flame burns</h2>
+      <p>Orhun and Handan relit the Forge of the First Flame and broke Vyrmhal, the Cold Crown. The lanterns of Velmara will not go dark again.</p>
+      <p style="color:#9a978e">Level ${G.level} · ${G.kills} foes defeated · ${G.gold} gold carried</p>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn primary" id="endStay">Keep exploring</button><button class="btn" id="endNew">Start a new journey</button></div>`;
     $('endStay').onclick = () => { w.hidden = true; };
     $('endNew').onclick = () => { w.hidden = true; newGame(); };
@@ -567,12 +638,12 @@ const SAVE_KEY = 'jadeborn_ember_road_v1';
 function serialize() {
   const c = ctrlHero();
   return { v: 1, zone: G.zone ? G.zone.id : 'town', pos: [c.x, c.y], ctrl: G.ctrl, level: G.level, xp: G.xp, gold: G.gold, inv: G.inv, equip: G.equip, potions: G.potions, q: G.q, beacons: G.beacons,
-    bossDead: G.bossDead, talents: G.talents, talentPicks: G.talentPicks, picked: G.picked, gauge: G.gauge, vendorStock: G.vendorStock, seen: G.seenBanter, gate: G.gateOpen, kills: G.kills, ended: G.ended,
+    bossDead: G.bossDead, talents: G.talents, talentPicks: G.talentPicks, picked: G.picked, gauge: G.gauge, vendorStock: G.vendorStock, seen: G.seenBanter, gate: G.gateOpen, frostGate: !!G.frostGate, kills: G.kills, ended: G.ended,
     hp: { orhun: P.orhun.hp, handan: P.handan.hp }, coop: G.coop };
 }
 function saveGame(silent) { if (!G.started) return; const ok = store(SAVE_KEY, serialize()); if (!silent) toast(ok ? 'Journey saved.' : 'Saving is blocked in this browser.'); }
 function resetState() {
-  Object.assign(G, { ctrl: 'orhun', coop: G.coop, level: 1, xp: 0, gold: 15, inv: [], potions: 3, potCd: 0, gauge: 0, equip: { orhun: {}, handan: {} }, q: {}, beacons: {}, bossDead: {}, talents: { orhun: {}, handan: {} }, talentPicks: {}, picked: {}, gateOpen: false, target: null, seenBanter: {}, wipeT: 0, kills: 0, ended: false, pendingTalent: null, dialog: null });
+  Object.assign(G, { ctrl: 'orhun', coop: G.coop, level: 1, xp: 0, gold: 15, inv: [], potions: 3, potCd: 0, gauge: 0, equip: { orhun: {}, handan: {} }, q: {}, beacons: {}, bossDead: {}, talents: { orhun: {}, handan: {} }, talentPicks: {}, picked: {}, gateOpen: false, frostGate: false, blizzard: false, eclipse: false, target: null, seenBanter: {}, wipeT: 0, kills: 0, ended: false, pendingTalent: null, dialog: null });
   P.orhun = makeHero('orhun'); P.handan = makeHero('handan'); P.fox = makeFox();
   recalcStats();
   for (const h of heroes()) h.hp = h.maxHp; P.handan.res = P.handan.resMax; P.fox.hp = P.fox.maxHp;
@@ -580,7 +651,7 @@ function resetState() {
 function loadState(d) {
   resetState();
   Object.assign(G, { ctrl: d.ctrl || 'orhun', level: d.level, xp: d.xp, gold: d.gold, inv: d.inv || [], equip: d.equip || { orhun: {}, handan: {} }, potions: d.potions, q: d.q || {}, beacons: d.beacons || {}, bossDead: d.bossDead || {},
-    talents: d.talents || { orhun: {}, handan: {} }, talentPicks: d.talentPicks || {}, picked: d.picked || {}, gauge: d.gauge || 0, vendorStock: d.vendorStock || [], seenBanter: d.seen || {}, gateOpen: !!d.gate, kills: d.kills || 0, ended: !!d.ended, coop: !!d.coop });
+    talents: d.talents || { orhun: {}, handan: {} }, talentPicks: d.talentPicks || {}, picked: d.picked || {}, gauge: d.gauge || 0, vendorStock: d.vendorStock || [], seenBanter: d.seen || {}, gateOpen: !!d.gate, frostGate: !!d.frostGate, kills: d.kills || 0, ended: !!d.ended, coop: !!d.coop });
   recalcStats();
   for (const h of heroes()) h.hp = h.maxHp; P.handan.res = P.handan.resMax;
   for (const lv in TALENTS) if (G.level >= +lv && !G.talentPicks[lv]) { G.pendingTalent = +lv; break; }
@@ -588,8 +659,8 @@ function loadState(d) {
 }
 
 /* ---------- Input wiring ---------- */
-function anyWindowOpen() { return ['winChar', 'winQuests', 'help', 'talent', 'ending'].some(id => !$(id).hidden); }
-function closeWindows() { let any = false; for (const id of ['winChar', 'winQuests', 'help']) if (!$(id).hidden) { $(id).hidden = true; any = true; } hideTip(); vendorMode = false; return any; }
+function anyWindowOpen() { return ['winChar', 'winQuests', 'help', 'talent', 'ending', 'winTravel'].some(id => $(id) && !$(id).hidden); }
+function closeWindows() { let any = false; for (const id of ['winChar', 'winQuests', 'help', 'winTravel']) if ($(id) && !$(id).hidden) { $(id).hidden = true; any = true; } hideTip(); vendorMode = false; return any; }
 function onKeyPress(k, e) {
   if (!G.started) { if (k === 'enter') { ($('bContinue').hidden ? $('bNew') : $('bContinue')).click(); } return; }
   SND.init();
@@ -604,6 +675,7 @@ function onKeyPress(k, e) {
     if (k === 'p' || code === 'Numpad0') { cycleTarget(h2); return; }
     if (k === 'n') { drinkPotion(h2); return; }
     if (k === 'm') { lanternburst(h2); return; }
+    if (k === 'shift') { dodge(code === 'ShiftRight' ? h2 : P.orhun); return; }
     if (k === 'r') { drinkPotion(P.orhun); return; }
     if (k === 'e' || k === ' ') { interact(P.orhun); return; }
     if (k === 'f') { lanternburst(P.orhun); return; }
@@ -613,6 +685,10 @@ function onKeyPress(k, e) {
     case 'escape': if (!closeWindows()) { G.target = null; G.autoAtk = false; } break;
     case '1': case '2': case '3': case '4': case '5': case '6': useAbility(ctrlHero(), +k - 1); break;
     case 'q': swapHero(); break;
+    case 'shift': dodge(ctrlHero()); break;
+    case 't': if ($('winTravel').hidden) openTravel(); else $('winTravel').hidden = true; break;
+    case 'v': mountToggle(); break;
+    case 'z': setAutoCast(!G.autoCast); break;
     case 'tab': cycleTarget(); break;
     case 'f': lanternburst(); break;
     case 'r': drinkPotion(); break;

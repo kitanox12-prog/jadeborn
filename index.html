@@ -231,6 +231,9 @@ canvas#game{position:fixed;inset:0;display:block;cursor:crosshair;background:tra
     <tr><td>Q</td><td>Swap between Orhun and Handan. The other is played by the AI and fights with you.</td></tr>
     <tr><td>F</td><td>Lanternburst when the jade gauge is full: heals both heroes and scorches nearby enemies.</td></tr>
     <tr><td>R</td><td>Drink a Healing Draught (shared 20s cooldown).</td></tr>
+    <tr><td>Shift</td><td>Dodge in the direction you are moving. Orhun rolls, Handan steps through the jade. Attacks pass through you while dodging. In co-op: Left Shift for Orhun, Right Shift for Handan.</td></tr>
+    <tr><td>T · V · Z</td><td>T opens waystone travel (relighting a beacon wakes that zone's waystone; Lanternhold's is always open). V: Handan conjures Lumen to carry you both, much faster, outside of fights. Z: auto-cast on/off, abilities fire by themselves during fights.</td></tr>
+    <tr><td>Controller</td><td>Left stick moves · A B X Y and bumpers cast abilities 1–6 · RT dodge · LT draught · D-pad up talk · D-pad down Lanternburst · D-pad left/right target · Back swaps hero. Two controllers play together in co-op.</td></tr>
     <tr><td>E / Space</td><td>Talk, pick up glowing quest items, relight beacons, advance dialogue.</td></tr>
     <tr><td>C · L (or X) · H · Esc</td><td>Bags and gear · Quest log · This help · Close windows / clear target.</td></tr>
     <tr><td>Roles</td><td><b>Orhun</b> is the duelist off-tank: he holds threat with Sunder and Challenging Roar and hits hard with Executioner's Edge. <b>Handan</b> is the loreweaver: damage and roots from range, plus Mending Light and Jade Ward to keep Orhun standing. Lumen, her spirit fox, fights at her side.</td></tr>
@@ -412,8 +415,9 @@ const SND = {
   }
 };
 /* ===================== DATA ===================== */
-const XP_NEED = [0, 100, 150, 210, 280, 360, 450, 560, 680, 820, Infinity];
-const MAX_LVL = 10;
+const XP_NEED = [0, 100, 150, 210, 280, 360, 450, 560, 680, 820, 1000, 1180, 1380, 1600, 1850, Infinity];
+const MAX_LVL = 15;
+const BEACON_BOSS = { b1: 'gnarl', b2: 'witch', b3: 'king', b4: 'wyrm' };
 const RARITY = ['Common', 'Uncommon', 'Rare', 'Epic'];
 const RCOL = ['#d8d8d8', '#5fdc6c', '#5aa6ff', '#c27cff'];
 
@@ -435,13 +439,14 @@ const ABIL = {
   orhun: [
     { id: 'sunder', name: 'Sunder', lvl: 1, cost: 0, gain: 15, cd: 3, range: 1.9, tgt: 'foe', icon: { bg: '#6b2a20', fg: '#f0d6b0', s: 'sword' },
       desc: c => `A heavy strike for <b>${Math.round(c.atk * 1.5)}</b> damage. Generates 15 rage and a lot of threat.`,
-      use(c, t) { swing(c, t); dealDamage(c, t, c.atk * 1.5, { threat: 3.2, label: 'Sunder' }); return true; } },
+      use(c, t) { swing(c, t); dealDamage(c, t, c.atk * 1.5, { threat: 3.2, label: 'Sunder' }); if (c.tal('stormblade')) { const o = foesNear(t, 2.5 * TILE).find(f => f !== t); if (o) { G.fx.push({ k: 'slash', x: o.x, y: o.y - 16, t: 0, dur: .2, a: 1 }); dealDamage(c, o, c.atk * .9, { threat: 2.4, label: 'Storm' }); } } return true; } },
     { id: 'roar', name: 'Challenging Roar', lvl: 1, cost: 10, cd: 12, range: 0, tgt: 'self', icon: { bg: '#5a3a14', fg: '#ffd27a', s: 'roar' },
       desc: c => `Taunt every enemy within 5 yards for 4s and weaken them (−15% damage) for 8s. Pulls aggro off Handan.`,
       use(c) {
         sfx('roar'); ring(c.x, c.y, 160, '#ffcf6a');
         let n = 0;
         for (const f of foesNear(c, 5 * TILE)) { taunt(f, c, 4); addBuff(f, { id: 'daunt', name: 'Daunted', dur: 8, mods: { dmgDone: 0.85 }, col: '#ffcf6a', debuff: true }); n++; }
+        if (c.tal('warcry')) for (const h of heroes()) if (!h.dead) { addBuff(h, { id: 'warcry', name: 'War Cry', dur: 8, mods: { dmgDone: 1.15 }, col: '#ffcf6a' }); sparkle(h, '#ffcf6a'); }
         if (!n) floatText(c.x, c.y - 30, 'No enemies near', '#bbb');
         return true;
       } },
@@ -449,10 +454,10 @@ const ABIL = {
       desc: c => `Spin and hit every enemy within 2 yards for <b>${Math.round(c.atk * 1.15 * (c.tal('cyclone') ? 1.5 : 1))}</b> damage. Good threat on packs.`,
       use(c) {
         sfx('whirl'); spinFx(c);
-        for (const f of foesNear(c, 2.3 * TILE)) dealDamage(c, f, c.atk * 1.15 * (c.tal('cyclone') ? 1.5 : 1), { threat: 2.2, label: 'Whirl' });
+        for (let k = 0; k < (c.tal('bladestorm') ? 2 : 1); k++) for (const f of foesNear(c, 2.3 * TILE)) dealDamage(c, f, c.atk * 1.15 * (c.tal('cyclone') ? 1.5 : 1), { threat: 2.2, label: 'Whirl' });
         return true;
       } },
-    { id: 'ironhide', name: 'Ironhide Parry', lvl: 4, cost: 15, cd: 20, range: 0, tgt: 'self', icon: { bg: '#2c3a4a', fg: '#c9d8ea', s: 'shield' },
+    { id: 'ironhide', name: 'Ironhide Parry', lvl: 4, cost: 15, cd: 20, range: 0, tgt: 'self', cdMod: c => c.tal('unbroken') ? -6 : 0, icon: { bg: '#2c3a4a', fg: '#c9d8ea', s: 'shield' },
       desc: c => `For 6s take ${c.tal('bulwark') ? 75 : 50}% less damage and riposte each melee hit for <b>${Math.round(c.atk * 0.6)}</b>.`,
       use(c) { sfx('shield'); addBuff(c, { id: 'ironhide', name: 'Ironhide', dur: 6, mods: { dmgTaken: c.tal('bulwark') ? 0.25 : 0.5 }, riposte: true, col: '#9fc3ee' }); ring(c.x, c.y, 40, '#9fc3ee'); return true; } },
     { id: 'exec', name: "Executioner's Edge", lvl: 6, cost: 40, cd: 10, range: 1.9, tgt: 'foe', icon: { bg: '#4a1010', fg: '#ff8a6a', s: 'axe' },
@@ -470,11 +475,11 @@ const ABIL = {
   handan: [
     { id: 'bolt', name: 'Jade Bolt', lvl: 1, cost: 6, cd: 0, range: 8, tgt: 'foe', icon: { bg: '#134a3a', fg: '#9ff5d0', s: 'bolt' },
       desc: c => `Hurl a bolt of jade fire for <b>${Math.round(c.atk * 1.25 * (c.tal('sharpjade') ? 1.15 : 1))}</b> damage.`,
-      use(c, t) { sfx('cast'); shoot(c, t, '#7dffc8', 420, () => dealDamage(c, t, c.atk * 1.25 * (c.tal('sharpjade') ? 1.15 : 1), { threat: 1, label: 'Bolt' }), 6); return true; } },
+      use(c, t) { const m = c.atk * 1.25 * (c.tal('sharpjade') ? 1.15 : 1); sfx('cast'); shoot(c, t, '#7dffc8', 420, () => dealDamage(c, t, m, { threat: 1, label: 'Bolt' }), 6); if (c.tal('twinbolt')) { const o = G.foes.filter(f => f !== t && !f.dead && !f.evade && dist(f, t) < 5 * TILE).sort((a, b) => dist(a, t) - dist(b, t))[0]; if (o) shoot(c, o, '#c9f5df', 400, () => dealDamage(c, o, m * .6, { threat: 1 }), 4); } return true; } },
     { id: 'thorn', name: 'Thornbind', lvl: 1, cost: 14, cd: 10, range: 8, tgt: 'foe', icon: { bg: '#24401c', fg: '#a8e07a', s: 'root' },
       desc: c => `Roots the enemy in place for 4s and deals <b>${Math.round(c.atk * 1.0)}</b> damage over the duration.`,
       use(c, t) { sfx('cast'); addBuff(t, { id: 'root', name: 'Thornbind', dur: 4, mods: { root: true }, dot: c.atk * 0.25, src: c, col: '#a8e07a', debuff: true }); vines(t); return true; } },
-    { id: 'mend', name: 'Mending Light', lvl: 2, cost: 22, cd: 5, range: 9, tgt: 'ally', icon: { bg: '#4a4214', fg: '#fff2b0', s: 'heal' },
+    { id: 'mend', name: 'Mending Light', lvl: 2, cost: 22, costFn: c => c.tal('wellspring') ? 13 : 22, cd: 5, range: 9, tgt: 'ally', icon: { bg: '#4a4214', fg: '#fff2b0', s: 'heal' },
       desc: c => `Heal an ally for <b>${Math.round(c.atk * 2.2)}</b> + 12% of their max health. Targets the most wounded hero if you have no friendly target.${c.tal('bloom') ? ' The other hero is healed for half.' : ''}`,
       use(c, t) {
         sfx('heal');
@@ -487,7 +492,7 @@ const ABIL = {
       use(c, t) { sfx('cast'); addBuff(t, { id: 'wither', name: 'Wither Hex', dur: 8, mods: { dmgDone: 0.8 }, dot: c.atk * 0.5 * (c.tal('rot') ? 1.5 : 1), src: c, col: '#c98aff', debuff: true }); sparkle(t, '#c98aff'); return true; } },
     { id: 'ward', name: 'Jade Ward', lvl: 6, cost: 25, cd: 15, range: 9, tgt: 'ally', icon: { bg: '#0f4a40', fg: '#8affe0', s: 'ward' },
       desc: c => `Shield an ally, absorbing <b>${Math.round((c.atk * 3 + 40) * (c.tal('thickward') ? 1.5 : 1))}</b> damage for 10s. Defaults to Orhun.`,
-      use(c, t) { sfx('shield'); addBuff(t, { id: 'ward', name: 'Jade Ward', dur: 10, absorb: (c.atk * 3 + 40) * (c.tal('thickward') ? 1.5 : 1), col: '#8affe0' }); ring(t.x, t.y, 30, '#8affe0'); return true; } },
+      use(c, t) { sfx('shield'); addBuff(t, { id: 'ward', name: 'Jade Ward', dur: 10, absorb: (c.atk * 3 + 40) * (c.tal('thickward') ? 1.5 : 1), col: '#8affe0', bloom: c.tal('wardburst') ? c : null }); ring(t.x, t.y, 30, '#8affe0'); return true; } },
     { id: 'fire', name: 'Lanternfire', lvl: 8, cost: 38, cd: 12, range: 8, tgt: 'foe', icon: { bg: '#5a2a08', fg: '#ffc070', s: 'fire' },
       desc: c => `Call down lantern flame on the target, burning all enemies within ${c.tal('wildfire') ? 3.5 : 2.5} yards for <b>${Math.round(c.atk * 2.2)}</b> plus a short burn.`,
       use(c, t) {
@@ -507,6 +512,12 @@ const TALENTS = {
        handan: [['foxbond', 'Fox Bond', 'Lumen deals double damage and has 50% more health.'], ['thickward', 'Thicker Ward', 'Jade Ward absorbs 50% more.']] },
   9: { orhun: [['laststand', 'Last Stand', 'Below 35% health, take 25% less damage.'], ['headsman', 'Headsman', "Executioner's Edge cooldown reduced by 4s."]],
        handan: [['lanternsoul', 'Lantern Soul', 'The Lantern gauge fills 50% faster.'], ['wildfire', 'Wildfire', 'Lanternfire radius increased to 3.5 yards.']] },
+  11: { orhun: [['stormblade', 'Stormblade', 'Sunder also strikes a second nearby enemy for 60% damage.'], ['unbroken', 'Unbroken', 'Ironhide Parry cooldown reduced by 6s.']],
+        handan: [['twinbolt', 'Twin Bolt', 'Jade Bolt fires a second bolt at another nearby enemy for 60% damage.'], ['wellspring', 'Wellspring', 'Mending Light costs 40% less mana.']] },
+  13: { orhun: [['warcry', 'War Cry', 'Challenging Roar also gives both heroes 15% more damage for 8s.'], ['secondwind', 'Second Wind', 'Healing Draughts also give Orhun 30 rage and 20% damage reduction for 6s.']],
+        handan: [['wardburst', 'Ward Bloom', 'When Jade Ward breaks or ends, it heals its target for 15% of their max health.'], ['lumenfury', 'Lumen\'s Fury', 'Lumen\'s bites chill enemies (30% slower) and heal Handan for 2% of her max health.']] },
+  15: { orhun: [['champion', 'Lantern Champion', '10% more health and attack.'], ['bladestorm', 'Bladestorm', 'Whirling Blades strikes twice.']],
+        handan: [['lanternheart', 'Lanternheart', '12% more spell power and 20% more mana.'], ['phoenix', 'Phoenix Thread', 'Once per fight, when Orhun would fall he is restored to 30% health.']] },
 };
 
 const FOES = {
@@ -525,6 +536,12 @@ const FOES = {
   archer:  { name: 'Shade Archer', lvl: 9, hp: 220, atk: 27, def: 6, spd: 80, range: 210, rate: 2.1, xp: 100, ranged: true, proj: '#c9a0ff', draw: 'archer', r: 11, gold: [6, 14] },
   wraith:  { name: 'Lantern Wraith', lvl: 9, hp: 250, atk: 26, def: 5, spd: 104, range: 30, rate: 1.5, xp: 100, drain: true, draw: 'wraith', r: 12, gold: [6, 14] },
   king:    { name: 'The Hollow King', lvl: 11, hp: 11500, atk: 50, def: 14, spd: 80, range: 48, rate: 2.1, xp: 2000, boss: 'king', draw: 'king', scale: 1.2, r: 26, gold: [200, 300] },
+  frostwolf: { name: 'Rimefang Wolf', lvl: 11, hp: 430, atk: 34, def: 10, spd: 104, range: 30, rate: 1.4, xp: 140, draw: 'wolf', scale: 1.1, r: 13, gold: [8, 16], tint: { c: '#dceeff', a: .72 } },
+  frostcaller: { name: 'Hollow Frostcaller', lvl: 12, hp: 380, atk: 36, def: 8, spd: 70, range: 210, rate: 2.2, xp: 160, ranged: true, proj: '#9fdcff', chill: true, draw: 'witch', r: 12, light: '#9fdcff', gold: [9, 18], tint: { c: '#9fc8ff', a: .55 } },
+  rimewraith: { name: 'Rime Wraith', lvl: 12, hp: 420, atk: 35, def: 7, spd: 110, range: 30, rate: 1.5, xp: 160, drain: true, chill: true, draw: 'wraith', r: 12, light: '#bfe6ff', gold: [9, 18], tint: { c: '#cfeaff', a: .6 } },
+  golem:   { name: 'Rime Colossus', lvl: 13, hp: 1900, atk: 52, def: 16, spd: 58, range: 44, rate: 2.4, xp: 520, elite: true, draw: 'golem', scale: 1.35, r: 22, light: '#7ec8ff', gold: [25, 40] },
+  rimeling:{ name: 'Rimeling', lvl: 13, hp: 260, atk: 24, def: 6, spd: 96, range: 28, rate: 1.4, xp: 12, draw: 'golem', scale: .6, r: 10 },
+  wyrm:    { name: 'Vyrmhal, the Cold Crown', lvl: 16, hp: 21500, atk: 68, def: 16, spd: 78, range: 58, rate: 2.2, xp: 3000, boss: 'wyrm', draw: 'wyrm', scale: 1.3, r: 34, light: '#9fdcff', gold: [300, 420] },
   orb:     { name: 'Shadow Orb', lvl: 10, hp: 110, atk: 0, def: 0, spd: 28, range: 0, rate: 99, xp: 0, draw: 'orb', r: 11, orb: true, light: '#b07cff' },
 };
 
@@ -535,6 +552,7 @@ const NPCS = {
   dorrak: { name: 'Dorrak', title: 'Smith & Trader', look: { robe: '#6a4a2a', hair: '#2a1d14', skin: '#c99872', beard: true, apron: true }, vendor: true },
   taner: { name: 'Scout Brannoc', title: 'Ember Road Watch', look: { robe: '#3a4a5a', hair: '#3a2a1a', skin: '#d8a882', hood: '#2a3640' } },
   ayla: { name: 'Liora', title: 'Spirit of the First Lantern', look: { robe: '#8ad8c0', hair: '#e8fff6', skin: '#cff5ea', ghost: true } },
+  kael: { name: 'Warden Kael', title: 'Keeper of the Pass', look: { robe: '#4a3a5a', hair: '#cfd4dc', skin: '#d9b08c', beard: true, hood: '#3a4a62' } },
 };
 
 const QUESTS = [
@@ -569,7 +587,27 @@ const QUESTS = [
     obj: [{ t: 'collect', item: 'shard', n: 3, label: 'Lantern shards found' }], xp: 650, gold: 60, item: 2, done: 'Your pendant sings with them. The throne gate is open now.' },
   { id: 'q10', name: 'The Hollow King', giver: 'ayla', pre: ['q8', 'q9'], zone: 'Hollow Keep',
     text: 'He was the lantern\'s guardian once. Now he is its hunger. End him, and relight the First Lantern on the throne dais.',
-    obj: [{ t: 'boss', e: 'king', n: 1, label: 'The Hollow King defeated' }, { t: 'beacon', id: 'b3', n: 1, label: 'The First Lantern relit' }], xp: 1200, gold: 200, item: 3, done: 'end' },
+    obj: [{ t: 'boss', e: 'king', n: 1, label: 'The Hollow King defeated' }, { t: 'beacon', id: 'b3', n: 1, label: 'The First Lantern relit' }], xp: 1200, gold: 200, item: 3, done: 'end', final: true },
+  // ---- Chapter II: Frostspire ----
+  { id: 'q11', name: 'The North Road', giver: 'maren', turnin: 'kael', pre: ['q10'], zone: 'Frostspire Pass', ch: 2,
+    text: 'Frost on the north road, in autumn. The wells froze overnight. Liora says the King was only a vessel: the shadow in his crown fled north to Frostspire, where the First Lantern was forged. Go to the pass and find Warden Kael.',
+    obj: [{ t: 'visit', zone: 'frostspire', n: 1, label: 'Reach Frostspire Pass' }], xp: 400, gold: 30, potions: 3,
+    done: 'Maren sent you? Then the lowlands are finally listening. Welcome to Frostspire. Stay near the fire when you can, and keep your blades dry.' },
+  { id: 'q12', name: 'Teeth of the Pass', giver: 'kael', pre: ['q11'], zone: 'Frostspire Pass', ch: 2,
+    text: 'The wolves up here were grey once. Now they run white and hungry, and they hunt anything warm. Thin the packs on the lower slopes.',
+    obj: [{ t: 'kill', e: ['frostwolf'], n: 8, label: 'Rimefang Wolves slain' }], xp: 900, gold: 60, done: 'Good. The supply sledges can move again.' },
+  { id: 'q13', name: 'Embers in the Ice', giver: 'kael', pre: ['q11'], zone: 'Frostspire Pass', ch: 2,
+    text: 'When the forge went cold, its embers scattered and froze. You will see them glowing under the snow. Bring me five and I can keep this camp alive.',
+    obj: [{ t: 'collect', item: 'ember', n: 5, label: 'Frozen embers gathered' }], xp: 900, gold: 50, potions: 4, done: 'Feel that? Warm. First warm thing up here in a week.' },
+  { id: 'q14', name: 'The Frozen Choir', giver: 'kael', pre: ['q12'], zone: 'Frostspire Pass', ch: 2,
+    text: 'Hollow Frostcallers chant on the ridge, and Rime Wraiths follow the song. Every verse makes the mountain colder. Silence six of them.',
+    obj: [{ t: 'kill', e: ['frostcaller', 'rimewraith'], n: 6, label: 'Choir silenced' }], xp: 1100, gold: 70, item: 2, done: 'Quiet at last. I had forgotten what the wind sounds like.' },
+  { id: 'q15', name: 'Walls of Ice', giver: 'kael', pre: ['q13'], zone: 'Frostspire Pass', ch: 2,
+    text: 'Two Rime Colossi stand guard where the forge road climbs. The ice gate behind them answers only to the old forge-flame, and your pendant carries some of it. Break the guardians.',
+    obj: [{ t: 'kill', e: ['golem'], n: 2, label: 'Rime Colossi shattered' }], xp: 1200, gold: 80, item: 2, done: 'The gate is melting. The forge road is yours.' },
+  { id: 'q16', name: 'The Cold Crown', giver: 'kael', pre: ['q14', 'q15'], zone: 'Frostspire Pass', ch: 2,
+    text: 'The shadow from the crown found a body worth having: Vyrmhal, the old wyrm that slept under the forge. Kill it, and relight the Forge of the First Flame. Then Velmara keeps its light for good.',
+    obj: [{ t: 'boss', e: 'wyrm', n: 1, label: 'Vyrmhal slain' }, { t: 'beacon', id: 'b4', n: 1, label: 'The Forge of the First Flame relit' }], xp: 2500, gold: 400, item: 3, done: 'end', final: true },
 ];
 
 /* ---------- Dialogue ---------- */
@@ -579,6 +617,7 @@ const NPC_TALK = {
   dorrak: ['Steel or potions, I have both. Coin first.', 'Bring me what you find out there. I buy anything that is not cursed. Mostly.'],
   taner: ['Stay on the dry paths. The water here has teeth.', 'My scouts were good people. Every one of them.'],
   ayla: ['I kept the light for two hundred years. I can keep it a little longer.', 'The pendant chose her, you know. It does not choose lightly.'],
+  kael: ['Keep moving up here. Standing still is how the cold gets you.', 'Twenty years on this pass. Never seen the forge-smoke stop. Until now.', 'If you hear singing on the ridge, do not follow it.'],
 };
 
 const BANTER = {
@@ -605,6 +644,18 @@ const BANTER = {
   gnarl: [['orhun', 'That is not a boar. That is a hill with tusks.'], ['handan', 'Then be a taller hill. I\'ll handle the healing.']],
   witch: [['witch', 'Two little candles, wading into my fen. I will drink your light slowly.'], ['handan', 'Orhun, keep her eyes on you. I\'ll deal with the puddles.']],
   king: [['king', 'The lantern-bearer returns. Give me the shard, child, and I will make the dark painless.'], ['orhun', 'She said no. I\'m saying it louder.'], ['handan', 'When the pendant wakes, I\'ll need everything you have left. Stay close.']],
+  'Frostspire Pass': [
+    ['handan', 'My breath is freezing. And the pendant... it\'s cold, Orhun. It\'s never been cold.'],
+    ['orhun', 'Then we find the forge and warm it up again. Stay close to me.'],
+    ['handan', 'Closer than that and you\'ll have to carry me.'],
+    ['orhun', 'Wouldn\'t be the first time.'],
+  ],
+  ch2: [
+    ['handan', 'Orhun. The pendant is cold again. The light didn\'t stay.'],
+    ['orhun', 'Then it isn\'t over. Let\'s hear what Elder Maren knows.'],
+  ],
+  wyrm: [['wyrm', 'Little flames. The crown told me of you. It said you would be... smaller.'], ['orhun', 'Funny. The King said something like that too.'], ['handan', 'Watch the breath! Get out of the blue when it glows!']],
+  b4: [['handan', 'The forge is singing. I can hear it in the pendant.'], ['orhun', 'Every lantern in Velmara is going to feel that.']],
   b1: [['handan', 'It\'s warm. The flame knows the pendant.'], ['orhun', 'One down. Look at that light.']],
   b2: [['orhun', 'Two beacons. I can see Lanternhold\'s glow from here.'], ['handan', 'The Keep is next. I can feel it pulling.']],
   levelup: [['orhun', 'Getting stronger. Feels good.'], ['handan', 'I learned something new. Remind me to show you.'], ['orhun', 'Was that a level? That was a level.'], ['handan', 'Lumen\'s getting cocky. I blame you.']],
@@ -616,12 +667,12 @@ const ITEM_NAMES = {
   orhun: { weapon: ['Longsword', 'Sabre', 'Broadblade', 'Duelist\'s Blade'], armor: ['Brigandine', 'Mail Coat', 'Leather Jerkin', 'Scale Hauberk'] },
   handan: { weapon: ['Staff', 'Rod', 'Willow Stave', 'Lantern Staff'], armor: ['Robe', 'Mantle', 'Spellweave Coat', 'Night Robe'] },
   any: { trinket: ['Charm', 'Band', 'Amulet', 'Lantern Token', 'Signet'] },
-  suf: [' of the Fen', ' of Embers', ' of Brightfield', ' of the Keep', ' of Velmara', ' of the Ember Road'],
+  suf: [' of the Fen', ' of Embers', ' of Brightfield', ' of the Keep', ' of Velmara', ' of the Ember Road', ' of Frostspire', ' of the Cold Forge'],
 };
 /* ===================== WORLD ===================== */
-const T = { GRASS: 0, PATH: 1, WATER: 2, WALL: 3, FLOOR: 4, TREE: 5, MARSH: 6, BRIDGE: 7, ROCK: 8, DGRASS: 9, ROOF: 10, PLAZA: 11, VOID: 12, GATE: 13, DEEP: 14 };
+const T = { GRASS: 0, PATH: 1, WATER: 2, WALL: 3, FLOOR: 4, TREE: 5, MARSH: 6, BRIDGE: 7, ROCK: 8, DGRASS: 9, ROOF: 10, PLAZA: 11, VOID: 12, GATE: 13, DEEP: 14, ICE: 15 };
 const SOLID = new Set([T.WATER, T.WALL, T.TREE, T.ROCK, T.ROOF, T.VOID, T.DEEP]);
-const MM_COL = { 0: '#2f4a2a', 1: '#7a6244', 2: '#24506e', 3: '#4a4652', 4: '#34323c', 5: '#1a3018', 6: '#33452f', 7: '#7a5a34', 8: '#5a5a60', 9: '#263c26', 10: '#6a3028', 11: '#5a5862', 12: '#000', 13: '#9a7a3a', 14: '#163448' };
+const MM_COL = { 15: '#9cc4dc', 0: '#2f4a2a', 1: '#7a6244', 2: '#24506e', 3: '#4a4652', 4: '#34323c', 5: '#1a3018', 6: '#33452f', 7: '#7a5a34', 8: '#5a5a60', 9: '#263c26', 10: '#6a3028', 11: '#5a5862', 12: '#000', 13: '#9a7a3a', 14: '#163448' };
 
 class Zone {
   constructor(id, name, w, h, opt) {
@@ -662,7 +713,7 @@ class Zone {
     }
   }
   scatter(t, test) { for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) if (test(x, y, this.get(x, y))) this.set(x, y, t); }
-  solid(x, y) { const t = this.get(x, y); if (t === T.GATE) return !G.gateOpen; return SOLID.has(t); }
+  solid(x, y) { const t = this.get(x, y); if (t === T.GATE) return !gateOpenFor(this.id); return SOLID.has(t); }
   clearPt(x, y, r = 1) { for (let j = y - r; j <= y + r; j++) for (let i = x - r; i <= x + r; i++) if (this.solid(i, j)) return false; return true; }
   randomOpen(rng, x0, y0, x1, y1, types = [T.GRASS, T.DGRASS, T.MARSH, T.FLOOR, T.PATH]) {
     for (let k = 0; k < 400; k++) {
@@ -676,6 +727,9 @@ class Zone {
 }
 
 /* ---------- Zone builders ---------- */
+function gateOpenFor(id) { return id === 'frostspire' ? !!G.frostGate : !!G.gateOpen; }
+function ch1Done() { return !!(G.q.q10 && G.q.q10.st === 'done'); }
+
 function buildTown() {
   const z = new Zone('town', 'Lanternhold', 44, 32, { seed: 11, dark: 0.62, tint: '#0a1028', style: 'town', music: 0, canopy: 'oak' });
   z.fill(T.GRASS);
@@ -686,13 +740,17 @@ function buildTown() {
   z.path([[30, 16], [43, 16]], 3, T.PATH, 0.4);
   z.path([[13, 16], [2, 16]], 3, T.PATH, 0.6);
   z.path([[22, 22], [22, 30]], 3, T.PATH, 0.6);
+  z.path([[22, 11], [22, 0]], 3, T.PATH, 0.3);
   z.house(3, 4, 8, 6); z.house(33, 4, 8, 6); z.house(3, 22, 8, 6); z.house(33, 22, 8, 6); z.house(14, 2, 6, 6); z.house(24, 2, 6, 6);
   z.rect(21, 15, 3, 3, T.WATER); z.decor.push({ type: 'fountain', x: 22, y: 16 });
   [[13, 10], [30, 10], [13, 22], [30, 22], [34, 14], [40, 14], [34, 18], [40, 18], [8, 14], [8, 18], [20, 27], [24, 27], [17, 10], [26, 10]].forEach(([x, y]) => z.lantern(x, y));
   z.decor.push({ type: 'stall', x: 28, y: 20 }, { type: 'herbs', x: 15, y: 20 }, { type: 'banner', x: 19, y: 10 }, { type: 'banner', x: 25, y: 10 });
-  z.npcs.push({ id: 'maren', x: 22, y: 12.6 }, { id: 'sela', x: 16, y: 19 }, { id: 'dorrak', x: 28, y: 19 });
+  z.npcs.push({ id: 'maren', x: 22, y: 12.6 }, { id: 'sela', x: 16, y: 19 }, { id: 'dorrak', x: 28, y: 19 }, { id: 'ayla', x: 25.6, y: 12.4, req: ch1Done });
+  z.lantern(20, 3); z.lantern(24, 3);
   z.portals.push({ x: 43, y: 14, w: 1, h: 5, to: 'brightfield', entry: 'west', label: 'Brightfield' });
-  z.entries = { start: [22, 20], east: [40.5, 16.5] };
+  z.portals.push({ x: 20, y: 0, w: 4, h: 1, to: 'frostspire', entry: 'south', label: 'Frostspire Pass', push: [0, 48], req: ch1Done, lock: 'Deep snow buries the north road. The way opens once the First Lantern burns again.' });
+  z.entries = { start: [22, 20], east: [40.5, 16.5], north: [22, 2.6] };
+  z.waystone = { x: 18, y: 13 };
   return z;
 }
 
@@ -734,6 +792,7 @@ function buildBrightfield() {
   z.portals.push({ x: 0, y: 23, w: 1, h: 7, to: 'town', entry: 'east', label: 'Lanternhold' });
   z.portals.push({ x: 71, y: 41, w: 1, h: 7, to: 'murkfen', entry: 'west', label: 'Murkfen', req: () => G.q.q4 && (G.q.q4.st === 'done' || G.beacons.b1), lock: 'A wall of Hollow darkness blocks the road. Relight the Brightfield beacon first.' });
   z.entries = { west: [3.5, 26.5], east: [68.5, 44.5] };
+  z.waystone = { x: 53, y: 27, need: 'b1' };
   return z;
 }
 
@@ -769,6 +828,7 @@ function buildMurkfen() {
   z.portals.push({ x: 0, y: 41, w: 1, h: 7, to: 'brightfield', entry: 'east', label: 'Brightfield' });
   z.portals.push({ x: 71, y: 8, w: 1, h: 6, to: 'keep', entry: 'west', label: 'Hollow Keep', req: () => !!G.beacons.b2, lock: 'The causeway is drowned in shadow. Relight the Murkfen beacon first.' });
   z.entries = { west: [3.5, 44.5], east: [68.5, 11.5] };
+  z.waystone = { x: 15, y: 42, need: 'b2' };
   return z;
 }
 
@@ -801,11 +861,62 @@ function buildKeep() {
   z.pickups.push({ id: 's1', item: 'shard', x: 30, y: 5 }, { id: 's2', item: 'shard', x: 30, y: 55 }, { id: 's3', item: 'shard', x: 54, y: 30 });
   z.portals.push({ x: 0, y: 28, w: 1, h: 5, to: 'murkfen', entry: 'east', label: 'Murkfen' });
   z.entries = { west: [3.5, 30.5] };
+  z.waystone = { x: 4, y: 27, need: 'b3' };
+  return z;
+}
+
+function buildFrostspire() {
+  const z = new Zone('frostspire', 'Frostspire Pass', 72, 52, { seed: 83, dark: 0.5, tint: '#0a1438', style: 'snow', canopy: 'pine', snow: true });
+  z.fill(T.GRASS);
+  z.scatter(T.DGRASS, (x, y) => fbm(x * .12, y * .12, 84) > .55);
+  z.border(2, T.TREE, [[33, 50, 6, 2]]);
+  z.scatter(T.ROCK, (x, y, t) => t !== T.TREE && fbm(x * .16, y * .16, 85) > .66);
+  z.scatter(T.TREE, (x, y, t) => (t === T.GRASS || t === T.DGRASS) && fbm(x * .14, y * .14, 86) > .6);
+  // frozen lake
+  for (let y = 0; y < z.h; y++) for (let x = 0; x < z.w; x++) { const d = Math.hypot((x - 19) / 8.5, (y - 25) / 6.2) + (fbm(x * .3, y * .3, 87) - .5) * .5; if (d < 1) z.set(x, y, T.ICE); }
+  // the forge plateau, walled off by cliffs with an ice gate
+  z.rect(46, 2, 2, 17, T.ROCK); z.rect(46, 17, 24, 2, T.ROCK);
+  z.rect(48, 2, 22, 15, T.GRASS);
+  z.scatter(T.DGRASS, (x, y, t) => t === T.GRASS && x >= 48 && y < 17 && fbm(x * .2, y * .2, 88) > .5);
+  z.scatter(T.ROCK, (x, y, t) => t !== T.ROCK && x >= 48 && y < 17 && Math.hypot(x - 58, y - 9) > 7.5 && hash2(x, y, 89) > .55);
+  z.circle(58, 9, 7, T.DGRASS, [T.ROCK, T.TREE, T.GRASS]);
+  z.circle(58, 9, 4.5, T.PLAZA);
+  // paths
+  z.path([[36, 51], [36, 44], [30, 38], [24, 33]], 3);
+  z.path([[36, 44], [44, 38], [52, 30], [57, 22], [57, 16]], 3);
+  z.path([[24, 33], [16, 16], [12, 10]], 3);
+  z.path([[30, 38], [10, 42]], 2);
+  z.path([[44, 38], [60, 42]], 2);
+  z.path([[57, 16], [58, 12]], 3);
+  // clearings
+  [[36, 44, 4.5], [12, 10, 4.5], [28, 13, 3.5], [12, 42, 4], [60, 42, 4], [23, 33, 3], [50, 31, 3.5], [57, 22, 4]].forEach(([x, y, r]) => z.circle(x, y, r, T.GRASS, [T.TREE, T.ROCK, T.DGRASS]));
+  for (let x = 55; x <= 59; x++) { z.set(x, 17, T.GATE); z.set(x, 18, T.PATH); }
+  z.set(54, 17, T.ROCK); z.set(60, 17, T.ROCK);
+  z.beacons.push({ id: 'b4', x: 58, y: 6, first: true });
+  [[52, 6], [64, 6], [52, 12], [64, 12]].forEach(([x, y]) => z.decor.push({ type: 'brazier', x, y }));
+  [[36, 49], [32, 41], [40, 41], [26, 35], [47, 35], [54, 26], [56, 19], [60, 19]].forEach(([x, y]) => z.lantern(x, y, 'b4'));
+  z.decor.push({ type: 'campfire', x: 37, y: 45 }, { type: 'tent', x: 39, y: 42 }, { type: 'tent', x: 31, y: 43 });
+  z.lantern(34, 46); z.lantern(40, 46);
+  z.npcs.push({ id: 'kael', x: 35.5, y: 43.4 });
+  const S = (type, x, y) => z.spawns.push({ type, x, y });
+  S('frostwolf', 12, 42); S('frostwolf', 14, 43); S('frostwolf', 11, 40);
+  S('frostwolf', 60, 42); S('frostwolf', 62, 43); S('frostwolf', 59, 40);
+  S('frostwolf', 23, 31); S('frostwolf', 25, 33); S('frostwolf', 50, 30); S('frostwolf', 52, 32);
+  S('frostcaller', 12, 10); S('frostcaller', 15, 8); S('rimewraith', 10, 13); S('rimewraith', 14, 12);
+  S('frostcaller', 28, 13); S('rimewraith', 30, 11); S('frostcaller', 19, 18); S('rimewraith', 26, 20);
+  S('golem', 55, 22); S('golem', 60, 22);
+  S('wyrm', 58, 9);
+  const r = mulberry32(91);
+  for (let i = 0; i < 4; i++) { const [x, y] = z.randomOpen(r, 13, 21, 26, 30, [T.ICE]); z.pickups.push({ id: 'em' + i, item: 'ember', x, y }); }
+  for (let i = 4; i < 7; i++) { const [x, y] = z.randomOpen(r, 6, 6, 44, 46, [T.GRASS, T.DGRASS]); z.pickups.push({ id: 'em' + i, item: 'ember', x, y }); }
+  z.portals.push({ x: 33, y: 51, w: 6, h: 1, to: 'town', entry: 'north', label: 'Lanternhold', push: [0, -48] });
+  z.entries = { south: [36, 48.6] };
+  z.waystone = { x: 32, y: 47, need: 'b4' };
   return z;
 }
 
 const ZONES = {};
-function initZones() { ZONES.town = buildTown(); ZONES.brightfield = buildBrightfield(); ZONES.murkfen = buildMurkfen(); ZONES.keep = buildKeep(); }
+function initZones() { ZONES.town = buildTown(); ZONES.brightfield = buildBrightfield(); ZONES.murkfen = buildMurkfen(); ZONES.keep = buildKeep(); ZONES.frostspire = buildFrostspire(); }
 
 /* ---------- Collision & pathing ---------- */
 function circleHitsSolid(z, x, y, r) {
@@ -865,6 +976,7 @@ function findPath(ax, ay, bx, by, maxN = 6000) {
 }
 /* ===================== GRAPHICS ===================== */
 const PAL = {
+  snow:   { grass: ['#d6e0ec', '#dce6f1', '#d0dbe8', '#e2eaf4'], dg: ['#c2cfdf', '#c8d4e4', '#bcc9db'], blade: '#aebdd0', flower: ['#ffffff', '#a9d4ff'], path: ['#a6b1c2', '#9fabbd', '#adb8c9'], pebble: '#8994a8' },
   meadow: { grass: ['#2c4a2b', '#31502e', '#294527', '#355631'], dg: ['#223a24', '#264028', '#1f3622'], blade: '#4c7a3e', flower: ['#e8d36a', '#d97a9a', '#a9c8f0', '#f4f0e0'], path: ['#6b5538', '#644f34', '#735b3c'], pebble: '#8a7658' },
   town:   { grass: ['#2c4a2b', '#31502e', '#294527', '#355631'], dg: ['#223a24', '#264028', '#1f3622'], blade: '#4c7a3e', flower: ['#e8d36a', '#d97a9a', '#f4f0e0'], path: ['#6b5538', '#644f34', '#735b3c'], pebble: '#8a7658' },
   marsh:  { grass: ['#26352a', '#2a3a2e', '#233127'], dg: ['#1e2c24', '#213027', '#1b2821'], blade: '#3f5a3a', flower: ['#b8e6c8', '#8a9a7a'], path: ['#4e4434', '#4a4030', '#544838'], pebble: '#6a6050' },
@@ -911,6 +1023,12 @@ function renderZone(z) {
         g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(X, Y, TILE, 1); g.fillRect(X, Y, 1, TILE);
         g.fillStyle = 'rgba(255,255,255,.035)'; g.fillRect(X + 1, Y + 1, TILE - 2, 1);
         if (h(tx, ty, 23) > .85) { g.strokeStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.moveTo(X + 6, Y + 8); g.lineTo(X + 14, Y + 16); g.lineTo(X + 12, Y + 26); g.stroke(); }
+        break; }
+      case T.ICE: {
+        g.fillStyle = ['#9cc6de', '#a4cce2', '#96c0da'][Math.floor(h(tx, ty, 60) * 3)]; g.fillRect(X, Y, TILE, TILE);
+        g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(X + h(tx, ty, 61) * 20, Y + 6 + h(tx, ty, 62) * 18, 10 + h(tx, ty, 63) * 10, 2);
+        if (h(tx, ty, 64) > .7) { g.strokeStyle = 'rgba(60,110,150,.45)'; g.lineWidth = 1; g.beginPath(); g.moveTo(X + 4, Y + 6 + h(tx, ty, 65) * 20); g.lineTo(X + 16, Y + 14); g.lineTo(X + 28, Y + 8 + h(tx, ty, 66) * 18); g.stroke(); }
+        if (!isT(tx, ty - 1, T.ICE)) { g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(X, Y, TILE, 2); }
         break; }
       case T.WATER: case T.DEEP: {
         g.fillStyle = t === T.DEEP ? '#0f2638' : (z.style === 'marsh' ? '#1a3438' : '#1b3a52'); g.fillRect(X, Y, TILE, TILE);
@@ -969,8 +1087,9 @@ function renderZone(z) {
     }
     if (t === T.ROCK) {
       g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(X + 16, Y + 26, 13, 5, 0, 0, 7); g.fill();
-      g.fillStyle = z.style === 'keep' ? '#4a4652' : '#5f6068'; g.beginPath(); g.moveTo(X + 4, Y + 26); g.lineTo(X + 7, Y + 10); g.lineTo(X + 16, Y + 4); g.lineTo(X + 26, Y + 9); g.lineTo(X + 29, Y + 26); g.closePath(); g.fill();
+      g.fillStyle = z.style === 'keep' ? '#4a4652' : z.style === 'snow' ? '#6a7484' : '#5f6068'; g.beginPath(); g.moveTo(X + 4, Y + 26); g.lineTo(X + 7, Y + 10); g.lineTo(X + 16, Y + 4); g.lineTo(X + 26, Y + 9); g.lineTo(X + 29, Y + 26); g.closePath(); g.fill();
       g.fillStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.moveTo(X + 8, Y + 12); g.lineTo(X + 16, Y + 6); g.lineTo(X + 18, Y + 14); g.closePath(); g.fill();
+      if (z.style === 'snow') { g.fillStyle = '#eef4fb'; g.beginPath(); g.moveTo(X + 7, Y + 11); g.lineTo(X + 16, Y + 4); g.lineTo(X + 26, Y + 9); g.lineTo(X + 22, Y + 13); g.lineTo(X + 14, Y + 10); g.lineTo(X + 10, Y + 14); g.closePath(); g.fill(); }
       if (z.style === 'keep') { g.fillStyle = '#35323c'; g.fillRect(X + 8, Y - 14, 16, 26); g.fillStyle = 'rgba(255,255,255,.08)'; g.fillRect(X + 8, Y - 14, 4, 26); }
     }
   }
@@ -992,6 +1111,14 @@ function renderZone(z) {
       case 'fountain': g.fillStyle = '#5a5862'; g.fillRect(X - 34, Y - 34, 100, 6); g.fillRect(X - 34, Y + 28, 100, 6); g.fillRect(X - 34, Y - 34, 6, 68); g.fillRect(X + 60, Y - 34, 6, 68); g.fillStyle = '#6e6c78'; g.fillRect(X + 10, Y + 8, 12, 14); g.fillRect(X + 13, Y - 6, 6, 16); break;
     }
   }
+  if (z.waystone) {
+    const X = z.waystone.x * TILE, Y = z.waystone.y * TILE;
+    g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(X + 16, Y + 28, 13, 5, 0, 0, 7); g.fill();
+    g.fillStyle = '#5a5866'; g.fillRect(X + 6, Y + 20, 20, 8);
+    g.fillStyle = '#6e6c7a'; g.beginPath(); g.moveTo(X + 9, Y + 22); g.lineTo(X + 12, Y - 18); g.lineTo(X + 16, Y - 24); g.lineTo(X + 20, Y - 18); g.lineTo(X + 23, Y + 22); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(X + 12, Y - 16, 3, 36);
+    g.fillStyle = '#2a2830'; g.fillRect(X + 14, Y - 8, 4, 12); g.fillRect(X + 12, Y - 4, 8, 3);
+  }
   // minimap
   const mm = document.createElement('canvas'); mm.width = z.w; mm.height = z.h;
   const m = mm.getContext('2d');
@@ -1000,6 +1127,16 @@ function renderZone(z) {
 }
 
 function drawCanopy(o, cx, cy, kind, a, b) {
+  if (kind === 'pine') {
+    o.fillStyle = 'rgba(0,0,0,.25)'; o.beginPath(); o.ellipse(cx + 3, cy + 16, 15, 6, 0, 0, 7); o.fill();
+    const tiers = [[18, 16, 0], [14, 13, -11], [10, 10, -21], [6, 7, -29]];
+    tiers.forEach(([w, h2, dy], i) => {
+      o.fillStyle = i % 2 ? '#1e4234' : '#244c3c'; o.beginPath(); o.moveTo(cx - w, cy + dy + h2 * .55); o.lineTo(cx, cy + dy - h2 * .7); o.lineTo(cx + w, cy + dy + h2 * .55); o.closePath(); o.fill();
+      o.fillStyle = '#eef4fb'; o.beginPath(); o.moveTo(cx - w * .9, cy + dy + h2 * .45); o.lineTo(cx - w * .2, cy + dy + h2 * .15 - a * 3); o.lineTo(cx + w * .5, cy + dy + h2 * .35); o.lineTo(cx + w * .9, cy + dy + h2 * .5); o.lineTo(cx + w * .6, cy + dy + h2 * .62); o.lineTo(cx - w * .7, cy + dy + h2 * .62); o.closePath(); o.fill();
+    });
+    o.fillStyle = '#ffffff'; o.beginPath(); o.moveTo(cx - 3, cy - 30); o.lineTo(cx, cy - 36); o.lineTo(cx + 3, cy - 30); o.closePath(); o.fill();
+    return;
+  }
   if (kind === 'dead') {
     o.strokeStyle = '#3a3028'; o.lineWidth = 3; o.lineCap = 'round';
     o.beginPath(); o.moveTo(cx, cy + 6); o.lineTo(cx - 10 - a * 6, cy - 10); o.moveTo(cx, cy + 4); o.lineTo(cx + 12 + b * 5, cy - 8); o.moveTo(cx, cy + 6); o.lineTo(cx + 2, cy - 18); o.stroke();
@@ -1160,7 +1297,9 @@ function drawPortrait(canvas, who) {
   g.fillStyle = grd; g.fillRect(0, 0, canvas.width, canvas.height);
   if (FOES[who]) { // foe portrait
     g.save(); g.translate(canvas.width / 2, canvas.height * .72); const s = canvas.width / 70; g.scale(s, s);
-    drawFoeShape(g, { type: who, def: FOES[who], t: 0, face: 1, anim: 0, hp: 1, maxHp: 1 }, 0, 0); g.restore(); return;
+    drawFoeShape(g, { type: who, def: FOES[who], t: 0, face: 1, anim: 0, hp: 1, maxHp: 1 }, 0, 0); g.restore();
+    if (FOES[who].tint) { g.save(); g.globalCompositeOperation = 'color'; g.globalAlpha = FOES[who].tint.a * .7; g.fillStyle = FOES[who].tint.c; g.fillRect(0, 0, canvas.width, canvas.height); g.restore(); }
+    return;
   }
   const look = LOOKS[who] || npcLook(who);
   const s = heroSprite(who, look, 0, 0);
@@ -1290,6 +1429,46 @@ function drawFoeShape(g, e, x, y) {
       eyeGlow(-1, -29 + fy, '#ffcf6a', 2); eyeGlow(3, -29 + fy, '#ffcf6a', 2);
       g.fillStyle = '#e0a64e'; g.shadowColor = '#e0a64e'; g.shadowBlur = 8; g.fillRect(8, -16 + fy, 4, 5); g.shadowBlur = 0;
       break; }
+    case 'golem': {
+      shadow(18, 5);
+      const leg = e.moving ? Math.sin(t * 7) * 3 : 0;
+      const ice = '#9cc4e0', icel = '#cde6f6', iced = '#6a92b4';
+      g.fillStyle = iced; g.fillRect(-12 + leg, -14, 9, 14); g.fillRect(3 - leg, -14, 9, 14);
+      g.fillStyle = ice; g.beginPath(); g.moveTo(-17, -12); g.lineTo(-20, -34); g.lineTo(-8, -46); g.lineTo(10, -46); g.lineTo(20, -32); g.lineTo(16, -12); g.closePath(); g.fill();
+      g.fillStyle = icel; g.beginPath(); g.moveTo(-16, -32); g.lineTo(-8, -44); g.lineTo(2, -44); g.lineTo(-6, -30); g.closePath(); g.fill();
+      g.fillStyle = iced; g.fillRect(-7, -56, 14, 11); g.fillStyle = icel; g.fillRect(-7, -56, 6, 4);
+      eyeGlow(-3, -51, '#7ec8ff', 2.4); eyeGlow(3, -51, '#7ec8ff', 2.4);
+      g.fillStyle = '#7ec8ff'; g.shadowColor = '#7ec8ff'; g.shadowBlur = 12; g.beginPath(); g.arc(0, -30, 4.5, 0, 7); g.fill(); g.shadowBlur = 0;
+      const sw = e.swing > 0 ? (1 - e.swing) : 0;
+      g.save(); g.translate(17, -38); g.rotate(-.3 + sw * 1.6); g.fillStyle = ice; g.fillRect(-4, 0, 10, 24); g.fillStyle = icel; g.fillRect(-6, 20, 14, 10); g.restore();
+      g.save(); g.translate(-17, -38); g.rotate(.3); g.fillStyle = iced; g.fillRect(-6, 0, 10, 24); g.fillRect(-8, 20, 14, 10); g.restore();
+      g.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 0; i < 3; i++) g.fillRect(-12 + i * 9, -40 + (i % 2) * 6, 2, 6);
+      break; }
+    case 'wyrm': {
+      shadow(42, 10);
+      const fl = Math.sin(t * 3) * (e.moving ? 1 : .5), body = '#a8c4dc', dark = '#5a7894', pale = '#e2f0fb';
+      const leg = e.moving ? Math.sin(t * 6) * 4 : 0;
+      g.fillStyle = dark; g.fillRect(-22 + leg, -16, 8, 16); g.fillRect(10 - leg, -16, 8, 16); g.fillRect(-12 - leg, -14, 7, 14); g.fillRect(18 + leg, -14, 7, 14);
+      // tail
+      g.strokeStyle = body; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(-26, -24); g.quadraticCurveTo(-46, -20 + fl * 4, -58, -8 + fl * 6); g.stroke();
+      g.strokeStyle = pale; g.lineWidth = 3; g.beginPath(); g.moveTo(-58, -8 + fl * 6); g.lineTo(-66, -4 + fl * 6); g.stroke();
+      // far wing
+      g.fillStyle = 'rgba(90,120,150,.85)'; g.beginPath(); g.moveTo(-4, -40); g.lineTo(-30, -78 - fl * 10); g.lineTo(-40, -52 - fl * 4); g.lineTo(-22, -46); g.closePath(); g.fill();
+      // body
+      g.fillStyle = body; g.beginPath(); g.ellipse(0, -28, 30, 15, 0, 0, 7); g.fill();
+      g.fillStyle = pale; g.beginPath(); g.ellipse(4, -21, 22, 6, 0, 0, 7); g.fill();
+      for (let i = 0; i < 5; i++) { g.fillStyle = pale; g.beginPath(); g.moveTo(-20 + i * 9, -40); g.lineTo(-16 + i * 9, -50); g.lineTo(-12 + i * 9, -40); g.closePath(); g.fill(); }
+      // neck + head
+      g.strokeStyle = body; g.lineWidth = 11; g.beginPath(); g.moveTo(22, -34); g.quadraticCurveTo(34, -52, 38, -64 + fl * 2); g.stroke();
+      g.fillStyle = body; g.beginPath(); g.ellipse(44, -66 + fl * 2, 12, 8, -.2, 0, 7); g.fill();
+      g.fillStyle = dark; g.beginPath(); g.moveTo(50, -64 + fl * 2); g.lineTo(62, -60 + fl * 2); g.lineTo(52, -58 + fl * 2); g.closePath(); g.fill();
+      g.fillStyle = pale; g.beginPath(); g.moveTo(38, -72 + fl * 2); g.lineTo(28, -88 + fl * 2); g.lineTo(42, -74 + fl * 2); g.closePath(); g.fill(); g.beginPath(); g.moveTo(43, -73 + fl * 2); g.lineTo(38, -90 + fl * 2); g.lineTo(47, -72 + fl * 2); g.closePath(); g.fill();
+      eyeGlow(47, -68 + fl * 2, '#9fdcff', 3);
+      if (e.bs && e.bs.cast && e.bs.cast.name === 'Frost Breath') { g.fillStyle = 'rgba(190,230,255,.6)'; g.beginPath(); g.arc(60, -60, 5 + Math.random() * 3, 0, 7); g.fill(); }
+      // near wing
+      g.fillStyle = 'rgba(150,185,215,.92)'; g.beginPath(); g.moveTo(4, -38); g.lineTo(-16, -92 - fl * 12); g.lineTo(-30, -60 - fl * 6); g.lineTo(-10, -44); g.closePath(); g.fill();
+      g.strokeStyle = dark; g.lineWidth = 2; g.beginPath(); g.moveTo(4, -38); g.lineTo(-16, -92 - fl * 12); g.stroke();
+      break; }
     case 'orb': {
       const r = 9 + Math.sin(t * 6) * 1.5;
       g.fillStyle = 'rgba(150,90,230,.25)'; g.beginPath(); g.arc(0, -14, r + 6, 0, 7); g.fill();
@@ -1338,6 +1517,8 @@ function drawIcon(c, spec) {
     case 'hex': g.beginPath(); for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 - 1.57; g.lineTo(24 + Math.cos(a) * 14, 24 + Math.sin(a) * 14); } g.closePath(); g.stroke(); g.beginPath(); g.arc(24, 24, 4, 0, 7); g.fill(); break;
     case 'ward': g.beginPath(); g.arc(24, 24, 14, 0, 7); g.stroke(); g.globalAlpha = .35; g.beginPath(); g.arc(24, 24, 14, 0, 7); g.fill(); g.globalAlpha = 1; g.beginPath(); g.moveTo(24, 14); g.lineTo(30, 24); g.lineTo(24, 34); g.lineTo(18, 24); g.closePath(); g.fill(); break;
     case 'fire': g.beginPath(); g.moveTo(24, 6); g.quadraticCurveTo(38, 22, 32, 36); g.quadraticCurveTo(24, 44, 16, 36); g.quadraticCurveTo(10, 22, 24, 6); g.fill(); g.fillStyle = '#fff2c0'; g.beginPath(); g.moveTo(24, 20); g.quadraticCurveTo(30, 30, 24, 38); g.quadraticCurveTo(18, 30, 24, 20); g.fill(); break;
+    case 'roll': g.beginPath(); g.arc(22, 24, 11, .6, 5.4); g.stroke(); L([30, 12, 33, 19, 26, 20]); L([8, 34, 16, 34]); L([6, 28, 12, 28]); break;
+    case 'blink': g.globalAlpha = .4; g.beginPath(); g.arc(14, 26, 6, 0, 7); g.stroke(); g.globalAlpha = 1; g.beginPath(); g.moveTo(34, 12); g.lineTo(40, 24); g.lineTo(34, 36); g.lineTo(28, 24); g.closePath(); g.fill(); L([16, 26, 26, 24]); break;
     case 'potion': g.fillStyle = '#c9c0b0'; g.fillRect(20, 8, 8, 8); g.fillStyle = '#d4503f'; g.beginPath(); g.arc(24, 30, 12, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.arc(20, 26, 3, 0, 7); g.fill(); break;
   }
   g.restore();
@@ -1388,7 +1569,10 @@ function recalcStats() {
     if (h.tal('thickskin')) def *= 1.2;
     if (h.tal('keenedge')) crit += .08;
     const ratio = h.maxHp > 1 ? h.hp / h.maxHp : 1;
-    h.maxHp = Math.round(hp); h.atk = atk; h.def = def; h.crit = crit; h.resMax = b.resMax;
+    if (key === 'orhun' && h.tal('champion')) { hp *= 1.1; atk *= 1.1; }
+    let resMax = b.resMax;
+    if (key === 'handan' && h.tal('lanternheart')) { atk *= 1.12; resMax = Math.round(resMax * 1.2); }
+    h.maxHp = Math.round(hp); h.atk = atk; h.def = def; h.crit = crit; h.resMax = resMax;
     h.hp = Math.max(h.dead ? 0 : 1, Math.round(h.maxHp * ratio));
     if (key === 'handan') h.res = Math.min(h.res, h.resMax);
   }
@@ -1425,7 +1609,9 @@ function tickBuffs(e, dt) {
     if (b.dot) { b.tick -= dt; if (b.tick <= 0) { b.tick += 1; if (b.src && !e.dead) dealDamage(b.src, e, b.dot, { dot: true, threat: 1, noCrit: true }); } }
     if (b.hot) { b.tick -= dt; if (b.tick <= 0) { b.tick += 1; heal(b.src || e, e, b.hot, true); } }
   }
-  e.buffs = e.buffs.filter(b => b.t > 0 && !(b.absorb !== undefined && b.absorb <= 0));
+  const keep = [];
+  for (const b of e.buffs) { if (b.t > 0 && !(b.absorb !== undefined && b.absorb <= 0)) keep.push(b); else if (b.bloom && !e.dead) { heal(b.bloom, e, e.maxHp * .15); sparkle(e, '#8affe0'); } }
+  e.buffs = keep;
 }
 
 /* ---------- Combat core ---------- */
@@ -1433,6 +1619,7 @@ function gaugeAdd(v) { const m = P.handan && P.handan.tal('lanternsoul') ? 1.5 :
 function dealDamage(src, tgt, amt, o = {}) {
   if (!tgt || tgt.dead || amt <= 0) return 0;
   if (tgt.evade) { floatText(tgt.x, tgt.y - 40, 'Evade', '#ccc'); return 0; }
+  if (tgt.iframes > 0) { if (!o.dot) floatText(tgt.x, tgt.y - 44, 'Dodged', '#c9f5df', .85); return 0; }
   let d = amt * rnd(.92, 1.08) * mod(src, 'dmgDone');
   let crit = false;
   if (!o.noCrit && Math.random() < (src.crit || 0)) { d *= 1.75; crit = true; }
@@ -1460,6 +1647,7 @@ function dealDamage(src, tgt, amt, o = {}) {
     if (tgt.key === 'orhun') { P.orhun.res = Math.min(100, P.orhun.res + (d / tgt.maxHp) * 90 * (tgt.tal('ragengine') ? 1.5 : 1)); }
     if (o.melee && tgt.buffs.some(b => b.riposte) && !src.dead) { setTimeout(() => dealDamage(tgt, src, tgt.atk * .6, { threat: 2, label: 'Riposte' }), 120); }
     if (src.def && src.def.drain) heal(src, src, d * .5, true);
+    if (src.def && src.def.chill && !o.dot) addBuff(tgt, { id: 'chill', name: 'Chilled', dur: 3, mods: { speed: .65 }, col: '#9fdcff', debuff: true });
     if (src.def && src.def.poison && !o.dot && Math.random() < .5) addBuff(tgt, { id: 'poison', name: 'Venom', dur: 5, dot: src.atk * .25, src, col: '#8aff5a', debuff: true });
     if (tgt.hero && tgt.hp > 0 && tgt.hp / tgt.maxHp < .3 && !tgt.lowWarned) { tgt.lowWarned = true; }
   }
@@ -1510,6 +1698,9 @@ function foeTarget(f) {
   return best;
 }
 function kill(e, src) {
+  if (e.key === 'orhun' && P.handan.tal('phoenix') && !P.handan.dead && !G.phoenixUsed) {
+    G.phoenixUsed = true; e.hp = Math.round(e.maxHp * .3); sparkle(e, '#ffd27a'); burstFx(e.x, e.y - 20, 40, '#ffd27a', 16); floatText(e.x, e.y - 70, 'Phoenix Thread!', '#ffd27a', 1.2); sfx('heal'); return;
+  }
   e.hp = 0; e.dead = true; e.buffs = [];
   if (e.team === 'foe') {
     e.deathT = 0;
@@ -1529,7 +1720,7 @@ function kill(e, src) {
       G.bossDead[e.type] = true; sfx('boom'); shake(10);
       banner(d.name, 'Defeated');
       for (const f of G.foes) if (!f.dead && f.summoned) { f.hp = 0; f.dead = true; f.deathT = 0; burstFx(f.x, f.y - 10, 16, '#7a5aa8', 8); }
-      G.teles = []; G.pools = [];
+      G.teles = []; G.pools = []; G.eclipse = false; G.blizzard = false;
       saveGame(true);
     }
     burstFx(e.x, e.y - 10, 26, d.boss ? '#e0a64e' : '#7a5aa8', 14);
@@ -1558,13 +1749,14 @@ function log(msg, col = '#d9d4c6') { const el = $('log'); const d = document.cre
 
 /* ---------- Abilities ---------- */
 function abilityList(h) { return ABIL[h.key]; }
+function acost(h, a) { return a.costFn ? a.costFn(h) : a.cost; }
 function abilityReady(h, a) {
   if (G.level < a.lvl) return 'locked';
   if (h.dead) return 'dead';
   if (has(h, 'stun')) return 'stunned';
   if ((h.cds[a.id] || 0) > 0) return 'cd';
   if (h.gcd > 0 && a.cd !== undefined) return 'gcd';
-  if (h.key === 'orhun' ? h.res < a.cost : h.res < a.cost) return 'res';
+  if (h.res < acost(h, a)) return 'res';
   return 'ok';
 }
 function resolveTarget(h, a, explicit) {
@@ -1597,8 +1789,8 @@ function useAbility(h, idx, explicit, quiet) {
     if (a.minRange && d < a.minRange * TILE) { say('Too close'); return false; }
     if (a.range > 3 && !lineClear(h.x, h.y - 10, t.x, t.y - 10, 3)) { say('No line of sight'); return false; }
   }
-  if (h.key === 'orhun') h.res = Math.min(100, h.res - a.cost + (a.gain || 0) * (h.tal('ragengine') ? 1.5 : 1));
-  else h.res -= a.cost;
+  if (h.key === 'orhun') h.res = Math.min(100, h.res - acost(h, a) + (a.gain || 0) * (h.tal('ragengine') ? 1.5 : 1));
+  else h.res -= acost(h, a);
   h.cds[a.id] = Math.max(0, a.cd + (a.cdMod ? a.cdMod(h) : 0));
   h.gcd = GCD;
   if (t.team === 'foe') { if (h === ctrlHero()) { G.target = t; G.autoAtk = true; } h.target = t; h.face = t.x >= h.x ? 1 : -1; }
@@ -1611,6 +1803,7 @@ function useAbility(h, idx, explicit, quiet) {
 /* ---------- Hero updates ---------- */
 function heroTick(h, dt) {
   h.t += dt;
+  if (h.iframes > 0) h.iframes -= dt;
   if (h.dead) {
     if (!G.inCombat && !(P.orhun.dead && P.handan.dead)) { h.reviveT += dt; if (h.reviveT > 4) { h.dead = false; h.hp = Math.round(h.maxHp * .35); h.lowWarned = false; const o = h === P.orhun ? P.handan : P.orhun; h.x = o.x + 20; h.y = o.y + 10; sparkle(h, '#fff2b0'); log(h.name + ' is back on their feet.', '#8affe0'); } }
     return;
@@ -1653,7 +1846,8 @@ function moveHero(h, vx, vy, dt) {
   if (len < .01) { h.moving = false; return; }
   vx /= len; vy /= len;
   const tile = G.zone.get(Math.floor(h.x / TILE), Math.floor(h.y / TILE));
-  const sp = HERO[h.key] ? HERO[h.key].speed : 140;
+  const sp = (HERO[h.key] ? HERO[h.key].speed : 140) * mod(h, 'speed');
+  h.lastMv = [vx, vy]; h.lastMvT = G.t;
   const slow = tile === T.MARSH ? .72 : 1;
   const ox = h.x, oy = h.y;
   moveEnt(h, vx * sp * slow * dt, vy * sp * slow * dt);
@@ -1754,6 +1948,7 @@ function heroAI(h, dt) {
         else { h.moving = false; h.face = t.x >= h.x ? 1 : -1; h.dir = 2; }
       }
     }
+    { const tl = G.teles.find(p => p.harm && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 4 && p.t > p.dur * .5); if (tl && !(h.cds.dodge > 0)) { dodge(h, h.x - tl.x, h.y - tl.y); return; } }
     // Orhun dodges telegraphs too
     if (h.key === 'orhun') { const tl = G.teles.find(p => p.harm && Math.hypot(p.x - h.x, p.y - h.y) < p.r + 6 && p.t > p.dur * .35); if (tl) { const a = Math.atan2(h.y - tl.y, h.x - tl.x); moveHero(h, Math.cos(a), Math.sin(a), dt); } }
     return;
@@ -1784,7 +1979,7 @@ function foxTick(f, dt) {
     if (ctrlHero() && G.target && G.target.team === 'foe' && !G.target.dead && G.target.aggro) t = G.target;
     const d = dist(f, t) - t.r - f.r;
     if (d > 14) steer(f, t.x + (f.x < t.x ? -t.r : t.r), t.y + 4, dt, 165, 6);
-    else { f.moving = false; f.face = t.x >= f.x ? 1 : -1; f.autoT -= dt; if (f.autoT <= 0) { f.autoT = 1.3; dealDamage(f, t, f.atk, { threat: 1 }); } }
+    else { f.moving = false; f.face = t.x >= f.x ? 1 : -1; f.autoT -= dt; if (f.autoT <= 0) { f.autoT = 1.3; dealDamage(f, t, f.atk, { threat: 1 }); if (P.handan.tal('lumenfury') && !t.dead) { addBuff(t, { id: 'lchill', name: 'Chilled', dur: 3, mods: { speed: .7 }, col: '#9fdcff' }); heal(P.handan, P.handan, P.handan.maxHp * .02, true); } } }
   } else followLeader(f, P.handan, dt, 2);
 }
 
@@ -1830,7 +2025,7 @@ function foeTick(f, dt) {
   const d = dist(f, tgt) - tgt.r - f.r;
   const range = f.def.range;
   const hasLos = !f.def.ranged || lineClear(f.x, f.y - 10, tgt.x, tgt.y - 10, 3);
-  if ((d > range || !hasLos) && !rooted) steer(f, tgt.x, tgt.y, dt, f.def.spd * (f.enraged ? 1.15 : 1), f.def.ranged ? 0 : tgt.r + f.r + range * .5);
+  if ((d > range || !hasLos) && !rooted) steer(f, tgt.x, tgt.y, dt, f.def.spd * (f.enraged ? 1.15 : 1) * mod(f, 'speed'), f.def.ranged ? 0 : tgt.r + f.r + range * .5);
   else f.moving = false;
   // separation
   for (const o of G.foes) { if (o === f || o.dead) continue; const dd = dist(o, f), m = o.r + f.r; if (dd < m && dd > .1) { const p = (m - dd) * .5; moveEnt(f, (f.x - o.x) / dd * p, (f.y - o.y) / dd * p); } }
@@ -1854,7 +2049,7 @@ function bossPull(f) {
   const lines = BANTER[f.type];
   if (lines && !G.seenBanter[f.type]) { G.seenBanter[f.type] = true; playDialog(lines.map(([w, t]) => ({ who: w, text: t }))); }
   if (!G.target || G.target.dead) { G.target = f; }
-  banner(f.name, f.type === 'gnarl' ? 'Beast of the Shrine' : f.type === 'witch' ? 'Mistress of Murkfen' : 'Lord of the Hollow');
+  banner(f.name, { gnarl: 'Beast of the Shrine', witch: 'Mistress of Murkfen', king: 'Lord of the Hollow', wyrm: 'The Cold Crown' }[f.type] || '');
 }
 function tele(x, y, r, dur, onEnd, col = '#ff4a3a', follow) { const t = { x, y, r, dur, t: 0, onEnd, col, harm: true, follow }; G.teles.push(t); return t; }
 function hitParty(x, y, r, src, amt) { for (const h of partyAlive()) if (Math.hypot(h.x - x, h.y - y) < r + h.r) dealDamage(src, h, amt, {}); }
@@ -1885,6 +2080,39 @@ function bossTick(f, tgt, dt) {
       b.cast = { name: 'Fen Rot', t: 1.4, dur: 1.4, end: () => sfx('tele') }; return castBlock();
     }
     if (b.adds <= 0) { b.adds = 18; b.cast = { name: 'Call the Fen', t: 1.6, dur: 1.6, end: () => { for (let i = 0; i < (b.blink ? 3 : 2); i++) { const [x, y] = arenaPoint(f, 6 * TILE); summon('mireling', x, y, P.orhun); } } }; return castBlock(); }
+  } else if (f.type === 'wyrm') {
+    if (b.breath === undefined) { b.breath = 5; b.tail = 9; b.spikes = 6; b.storm = 4; }
+    b.breath -= dt; b.tail -= dt;
+    if (hpP < .72 && !b.adds1) { b.adds1 = true; floatText(f.x, f.y - 100, 'The ice answers Vyrmhal!', '#bfe6ff', 1.2); for (let i = 0; i < 2; i++) { const [x, y] = arenaPoint(f, 5 * TILE); summon('rimeling', x, y, P.orhun); } }
+    if (hpP < .55 && !b.p2) { b.p2 = true; G.blizzard = true; banner('Whiteout', 'Vyrmhal calls the blizzard'); sfx('roar'); b.spikes = 2; }
+    if (hpP < .35 && !b.adds2) { b.adds2 = true; for (let i = 0; i < 3; i++) { const [x, y] = arenaPoint(f, 5 * TILE); summon('rimeling', x, y, P.orhun); } }
+    if (hpP < .22 && !b.p3) {
+      b.p3 = true; G.gauge = 100; sfx('beacon');
+      playDialog([{ who: 'handan', text: 'The pendant is burning again! The forge remembers it, Orhun!' }, { who: 'orhun', text: 'Then give it something to remember. Now!' }, { who: 'narrator', text: 'The Lantern gauge is full. Press F (or the lantern button) to unleash Lanternburst.' }]);
+    }
+    if (b.p2) {
+      b.spikes -= dt; b.storm -= dt;
+      if (b.storm <= 0) { b.storm = 4; for (const h of partyAlive()) dealDamage(f, h, f.atk * .22, { noCrit: true, dot: true }); }
+      if (b.spikes <= 0) {
+        b.spikes = 7; const spots = heroes().filter(h => !h.dead).map(h => [h.x, h.y]); spots.push(arenaPoint(f, 5 * TILE), arenaPoint(f, 5 * TILE));
+        for (const [x, y] of spots) tele(x, y, 1.4 * TILE, 1.5, () => { burstFx(x, y, 1.4 * TILE, '#bfe6ff', 10); sfx('crit'); hitParty(x, y, 1.4 * TILE, f, f.atk * 1.8); }, '#7ec8ff');
+      }
+    }
+    if (b.breath <= 0) {
+      b.breath = b.p2 ? 8 : 9.5; const a = Math.atan2(tgt.y - f.y, tgt.x - f.x); const pts = [];
+      for (let k = 1; k <= 5; k++) pts.push([f.x + Math.cos(a) * k * 1.45 * TILE, f.y + Math.sin(a) * k * 1.45 * TILE]);
+      for (const [x, y] of pts) tele(x, y, 1.2 * TILE, 1.7, null, '#7ec8ff');
+      b.cast = { name: 'Frost Breath', t: 1.7, dur: 1.7, end: () => {
+        sfx('whirl'); shake(7); const hit = new Set();
+        for (const [x, y] of pts) { burstFx(x, y, 1.2 * TILE, '#dff4ff', 8); for (const h of partyAlive()) if (!hit.has(h) && Math.hypot(h.x - x, h.y - y) < 1.2 * TILE + h.r) { hit.add(h); dealDamage(f, h, f.atk * 2.3, {}); addBuff(h, { id: 'chill', name: 'Chilled', dur: 4, mods: { speed: .6 }, col: '#9fdcff', debuff: true }); } }
+      } };
+      return castBlock();
+    }
+    if (b.tail <= 0) {
+      b.tail = b.p2 ? 8 : 10; const x = f.x, y = f.y; tele(x, y, 2.9 * TILE, 1.5, null, '#7ec8ff');
+      b.cast = { name: 'Tail Sweep', t: 1.5, dur: 1.5, end: () => { f.swing = 1; sfx('boom'); shake(9); burstFx(x, y, 2.9 * TILE, '#bfe6ff', 20); hitParty(x, y, 2.9 * TILE, f, f.atk * 2.4); } };
+      return castBlock();
+    }
   } else if (f.type === 'king') {
     if (b.cleave === undefined) { b.cleave = 6; b.orbs = 11; b.rings = 9; }
     b.cleave -= dt; b.orbs -= dt;
@@ -1980,17 +2208,18 @@ function giveItem(it) {
   refreshCharWin();
 }
 function qState(id) { return G.q[id] ? G.q[id].st : (QUESTS.find(q => q.id === id).pre.every(p => G.q[p] && G.q[p].st === 'done') ? 'avail' : 'locked'); }
+function qTurnin(q) { return q.turnin || q.giver; }
 function qProgress(type, key) {
   for (const q of QUESTS) {
     const s = G.q[q.id]; if (!s || s.st !== 'active') continue;
     let changed = false;
     q.obj.forEach((o, i) => {
       if (s.prog[i] >= o.n) return;
-      if ((o.t === 'kill' && type === 'kill' && o.e.includes(key)) || (o.t === 'collect' && type === 'collect' && o.item === key) || (o.t === 'boss' && type === 'boss' && o.e === key) || (o.t === 'beacon' && type === 'beacon' && o.id === key)) { s.prog[i]++; changed = true; toast(`${o.label}: ${s.prog[i]}/${o.n}`); }
+      if ((o.t === 'kill' && type === 'kill' && o.e.includes(key)) || (o.t === 'collect' && type === 'collect' && o.item === key) || (o.t === 'boss' && type === 'boss' && o.e === key) || (o.t === 'beacon' && type === 'beacon' && o.id === key) || (o.t === 'visit' && type === 'visit' && o.zone === key)) { s.prog[i]++; changed = true; toast(`${o.label}: ${s.prog[i]}/${o.n}`); }
     });
     if (changed && q.obj.every((o, i) => s.prog[i] >= o.n)) {
-      if (q.id === 'q10') { s.st = 'done'; continue; }
-      s.st = 'ready'; sfx('quest'); toast(`<b>${q.name}</b> complete. Return to ${NPCS[q.giver].name}.`);
+      if (q.final) { s.st = 'done'; continue; }
+      s.st = 'ready'; sfx('quest'); toast(`<b>${q.name}</b> complete. Return to ${NPCS[qTurnin(q)].name}.`);
     }
     if (changed) renderTracker();
   }
@@ -1998,7 +2227,7 @@ function qProgress(type, key) {
 function acceptQuest(q) {
   G.q[q.id] = { st: 'active', prog: q.obj.map(() => 0) };
   // credit already-done objectives
-  q.obj.forEach((o, i) => { if (o.t === 'boss' && G.bossDead[o.e]) G.q[q.id].prog[i] = 1; if (o.t === 'beacon' && G.beacons[o.id]) G.q[q.id].prog[i] = 1; });
+  q.obj.forEach((o, i) => { if (o.t === 'visit' && G.zone && G.zone.id === o.zone) G.q[q.id].prog[i] = 1; if (o.t === 'boss' && G.bossDead[o.e]) G.q[q.id].prog[i] = 1; if (o.t === 'beacon' && G.beacons[o.id]) G.q[q.id].prog[i] = 1; });
   if (q.obj.every((o, i) => G.q[q.id].prog[i] >= o.n)) G.q[q.id].st = 'ready';
   sfx('quest'); toast(`Quest accepted: <b>${q.name}</b>`); log('Quest accepted: ' + q.name, '#e0a64e');
   renderTracker(); saveGame(true);
@@ -2010,6 +2239,7 @@ function turnIn(q) {
   if (q.item) giveItem(randomItem(G.level + 1, q.item));
   sfx('quest'); toast(`<b>${q.name}</b> turned in. +${q.xp} xp, +${q.gold}g`);
   if (q.id === 'q9') { G.gateOpen = true; toast('The throne gate grinds open.'); }
+  if (q.id === 'q15') { G.frostGate = true; toast('The ice gate melts away. The forge road is open.'); }
   renderTracker(); saveGame(true);
 }
 
@@ -2022,7 +2252,7 @@ function interact(h = ctrlHero()) {
   const b = nearestBeacon(undefined, h);
   if (b) {
     if (G.beacons[b.id]) { toast('The beacon burns bright.'); return; }
-    const bossFor = { b1: 'gnarl', b2: 'witch', b3: 'king' }[b.id];
+    const bossFor = BEACON_BOSS[b.id];
     if (!G.bossDead[bossFor]) { toast('The Hollow still guards this beacon.'); return; }
     relight(b); return;
   }
@@ -2033,6 +2263,7 @@ function relight(b) {
   burstFx((b.x + .5) * TILE, (b.y + .5) * TILE - 20, 70, '#ffd86a', 30);
   qProgress('beacon', b.id);
   if (b.id === 'b3') { setTimeout(showEnding, 2500); saveGame(true); return; }
+  if (b.id === 'b4') { setTimeout(showEnding2, 2500); saveGame(true); return; }
   banner('Beacon relit', b.id === 'b1' ? 'Brightfield breathes again' : 'The fog of Murkfen recedes');
   const lines = BANTER[b.id]; if (lines) setTimeout(() => playDialog(lines.map(([w, t]) => ({ who: w, text: t }))), 900);
   saveGame(true);
@@ -2046,7 +2277,7 @@ function lanternburst(who) {
   G.fx.push({ k: 'flash', t: 0, dur: .6 });
   for (const h of heroes()) { if (h.dead) { h.dead = false; h.hp = 1; h.x = c.x + rnd(-20, 20); h.y = c.y + rnd(-10, 10); } heal(P.handan, h, h.maxHp * .45); }
   const dmg = (P.orhun.atk + P.handan.atk) * 3.2;
-  for (const f of foesNear(c, 6 * TILE)) { let d = dmg; if (f.type === 'king' && f.bs.p3) d += f.maxHp * .12; dealDamage(P.handan, f, d, { noCrit: true, threat: .5 }); }
+  for (const f of foesNear(c, 6 * TILE)) { let d = dmg; if ((f.type === 'king' || f.type === 'wyrm') && f.bs.p3) d += f.maxHp * (f.type === 'wyrm' ? .1 : .12); dealDamage(P.handan, f, d, { noCrit: true, threat: .5 }); }
   floatText(c.x, c.y - 80, 'LANTERNBURST', '#c9f5df', 1.6);
 }
 function drinkPotion(c = ctrlHero()) {
@@ -2054,6 +2285,7 @@ function drinkPotion(c = ctrlHero()) {
   if (G.potions <= 0) { floatText(c.x, c.y - 60, 'No Healing Draughts', '#ff9a8a', .85); sfx('deny'); return; }
   if (c.dead) return;
   G.potions--; G.potCd = 20; heal(c, c, c.maxHp * .45); sparkle(c, '#ff8a7a'); sfx('heal');
+  if (c.key === 'orhun' && c.tal('secondwind')) { c.res = Math.min(100, c.res + 30); addBuff(c, { id: 'secondwind', name: 'Second Wind', dur: 6, mods: { dmgTaken: .8 }, col: '#ff8a7a' }); }
 }
 function swapHero(silent) {
   if (G.coop) return;
@@ -2078,8 +2310,8 @@ function enterZone(id, entryKey, pos) {
   if (!z.base) renderZone(z);
   G.zone = z; G.foes = []; G.proj = []; G.teles = []; G.pools = []; G.fx = []; G.texts = []; G.target = null; G.autoAtk = false; G.eclipse = false; G.moveTo = null;
   for (const s of z.spawns) { if (FOES[s.type].boss && G.bossDead[s.type]) continue; G.foes.push(makeFoe(s.type, s.x, s.y)); }
-  G.npcs = z.npcs.map(n => ({ ...n, x: (n.x + .5) * TILE, y: (n.y + .5) * TILE, t: Math.random() * 5 }));
-  let p = pos || z.entries[entryKey] || z.entries.start || z.entries.west;
+  G.npcs = z.npcs.filter(n => !n.req || n.req()).map(n => ({ ...n, x: (n.x + .5) * TILE, y: (n.y + .5) * TILE, t: Math.random() * 5 }));
+  let p = pos || z.entries[entryKey] || z.entries.start || z.entries.west || Object.values(z.entries)[0];
   const px = pos ? pos[0] : (p[0]) * TILE, py = pos ? pos[1] : (p[1]) * TILE;
   const c = ctrlHero(), o = otherHero();
   c.x = px; c.y = py; o.x = px - 20; o.y = py + 14; P.fox.x = px - 10; P.fox.y = py + 24;
@@ -2088,7 +2320,10 @@ function enterZone(id, entryKey, pos) {
   $('zonename').textContent = z.name;
   G.lastSafe = { zone: id, pos: [px, py] };
   if (BANTER[z.name] && !G.seenBanter[z.name]) { G.seenBanter[z.name] = true; setTimeout(() => playDialog(BANTER[z.name].map(([w, t]) => ({ who: w, text: t }))), 700); }
-  banner(z.name, { town: 'The last city of lantern light', brightfield: 'Meadows under a bruised sky', murkfen: 'Where the fog keeps its dead', keep: 'Seat of the Hollow King' }[id]);
+  G.blizzard = false; G.eclipse = false;
+  qProgress('visit', id);
+  if (id === 'town' && ch1Done() && !G.seenBanter.ch2 && !(G.q.q11)) { G.seenBanter.ch2 = true; setTimeout(() => playDialog(BANTER.ch2.map(([w, t]) => ({ who: w, text: t }))), 900); }
+  banner(z.name, { frostspire: 'Where the first flame was forged', town: 'The last city of lantern light', brightfield: 'Meadows under a bruised sky', murkfen: 'Where the fog keeps its dead', keep: 'Seat of the Hollow King' }[id]);
   renderTracker();
 }
 let zoneLock = 0;
@@ -2099,8 +2334,9 @@ function checkPortals() {
   for (const p of G.zone.portals) {
     const hit = who.find(h => { const hx = h.x / TILE, hy = h.y / TILE; return hx >= p.x - .3 && hx <= p.x + p.w + .3 && hy >= p.y && hy <= p.y + p.h; });
     if (hit) { const c = hit; {
-      if (p.req && !p.req()) { toast(p.lock); zoneLock = 2; c.x += (p.x < G.zone.w / 2 ? 1 : -1) * 40; return; }
-      if (G.inCombat) { toast('You cannot leave while in combat.'); zoneLock = 1.5; c.x += (p.x < G.zone.w / 2 ? 1 : -1) * 40; return; }
+      const push = p.push || [p.x < G.zone.w / 2 ? 40 : -40, 0];
+      if (p.req && !p.req()) { toast(p.lock); zoneLock = 2; c.x += push[0]; c.y += push[1]; return; }
+      if (G.inCombat) { toast('You cannot leave while in combat.'); zoneLock = 1.5; c.x += push[0]; c.y += push[1]; return; }
       zoneLock = 1.5;
       fadeTo(() => { enterZone(p.to, p.entry); saveGame(true); });
       return;
@@ -2126,16 +2362,13 @@ function update(dt) {
   zoneLock = Math.max(0, zoneLock - dt);
   G.potCd = Math.max(0, G.potCd - dt);
   G.inCombat = G.foes.some(f => f.aggro && !f.dead && !f.evade);
+  if (!G.inCombat) G.phoenixUsed = false;
   if (G.inCombat) G.combatT += dt; else G.combatT = 0;
   if (G.wipeT > 0) { G.wipeT -= dt; if (G.wipeT <= 0) wipe(); }
   const c = ctrlHero();
   // controlled movement
   if (!c.dead && !c.dash) {
-    let vx = 0, vy = 0;
-    const ar = !G.coop;
-    if (keys['w'] || (ar && keys['arrowup'])) vy -= 1; if (keys['s'] || (ar && keys['arrowdown'])) vy += 1;
-    if (keys['a'] || (ar && keys['arrowleft'])) vx -= 1; if (keys['d'] || (ar && keys['arrowright'])) vx += 1;
-    if (window.JOY && JOY.active && JOY.mag > .18) { vx += JOY.vx; vy += JOY.vy; }
+    const [vx, vy] = inputVec(1);
     if (vx || vy) { G.moveTo = null; c.path = null; moveHero(c, vx, vy, dt); }
     else if (G.moveTo) {
       const m = G.moveTo;
@@ -2146,9 +2379,8 @@ function update(dt) {
   }
   if (G.coop) {
     const h2 = P.handan;
-    if (!h2.dead && !h2.dash) {
-      let vx = 0, vy = 0;
-      if (keys['arrowup']) vy -= 1; if (keys['arrowdown']) vy += 1; if (keys['arrowleft']) vx -= 1; if (keys['arrowright']) vx += 1;
+    if (!h2.dead && !h2.dash && !G.mounted) {
+      const [vx, vy] = inputVec(2);
       if (vx || vy) moveHero(h2, vx, vy, dt); else h2.moving = false;
     }
   }
@@ -2180,9 +2412,225 @@ function update(dt) {
   G.saveT += dt; if (G.saveT > 30 && !G.inCombat) { G.saveT = 0; saveGame(true); }
 }
 function pickupActive(p) {
-  const map = { moonpetal: 'q2', token: 'q5', shard: 'q9' };
+  const map = { moonpetal: 'q2', token: 'q5', shard: 'q9', ember: 'q13' };
   const s = G.q[map[p.item]]; return s && s.st === 'active';
 }
+
+/* ---------- Input vectors (keyboard, touch stick, gamepads) ---------- */
+var PADV = [[0, 0], [0, 0]];
+function inputVec(player) {
+  let vx = 0, vy = 0;
+  if (player === 1) {
+    const ar = !G.coop;
+    if (keys['w'] || (ar && keys['arrowup'])) vy -= 1; if (keys['s'] || (ar && keys['arrowdown'])) vy += 1;
+    if (keys['a'] || (ar && keys['arrowleft'])) vx -= 1; if (keys['d'] || (ar && keys['arrowright'])) vx += 1;
+    if (window.JOY && JOY.active && JOY.mag > .18) { vx += JOY.vx; vy += JOY.vy; }
+    vx += PADV[0][0]; vy += PADV[0][1];
+  } else {
+    if (keys['arrowup']) vy -= 1; if (keys['arrowdown']) vy += 1; if (keys['arrowleft']) vx -= 1; if (keys['arrowright']) vx += 1;
+    vx += PADV[1][0]; vy += PADV[1][1];
+  }
+  return [vx, vy];
+}
+
+/* ---------- Dodge: Orhun rolls, Handan steps through the jade ---------- */
+const DODGE = { orhun: { cd: 6, dist: 3.2 * TILE, ifr: .45, name: 'Combat Roll' }, handan: { cd: 8, dist: 4 * TILE, ifr: .35, name: 'Jade Step' } };
+function dodge(h, dx = 0, dy = 0) {
+  if (!h || h.dead || h.dash || has(h, 'stun')) return false;
+  const human = G.coop || h === ctrlHero();
+  if ((h.cds.dodge || 0) > 0) { if (human) { floatText(h.x, h.y - 60, 'Not ready yet', '#ff9a8a', .85); sfx('deny'); } return false; }
+  if (!dx && !dy) {
+    if (human) { const v = inputVec(G.coop && h.key === 'handan' ? 2 : 1); dx = v[0]; dy = v[1]; }
+    if (!dx && !dy && h.lastMv && G.t - (h.lastMvT || 0) < .25) { dx = h.lastMv[0]; dy = h.lastMv[1]; }
+    if (!dx && !dy) { const near = G.foes.filter(f => !f.dead && f.aggro).sort((a, b) => dist(a, h) - dist(b, h))[0]; if (near) { dx = h.x - near.x; dy = h.y - near.y; } }
+    if (!dx && !dy) { dx = h.face || 1; dy = 0; }
+  }
+  const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+  const D = DODGE[h.key];
+  h.cds.dodge = D.cd; h.iframes = D.ifr;
+  h.buffs = h.buffs.filter(b => !(b.mods && (b.mods.root || b.mods.speed)));
+  if (Math.abs(dx) > Math.abs(dy)) { h.dir = 2; h.face = dx > 0 ? 1 : -1; } else h.dir = dy > 0 ? 0 : 1;
+  if (h.key === 'orhun') { h.dash = { vx: dx, vy: dy, left: D.dist, sp: 600, roll: true, onEnd: null }; sfx('slash'); }
+  else {
+    sparkle(h, '#7dffc8'); ring(h.x, h.y, 24, '#46c495');
+    for (let s = 0; s < D.dist; s += 6) { const ox = h.x, oy = h.y; moveEnt(h, dx * 6, dy * 6); h.blockedX = h.blockedY = false; if (h.x === ox && h.y === oy) break; }
+    sparkle(h, '#c9f5df'); ring(h.x, h.y, 30, '#7dffc8'); sfx('tele');
+  }
+  if (human) flashSlot('dodge', h.key);
+  return true;
+}
+/* ===================== TRAVEL, MOUNT, AUTO-CAST, HEARTS ===================== */
+const TRAVEL_ORDER = ['town', 'brightfield', 'murkfen', 'keep', 'frostspire'];
+const BEACON_ZONE_NAME = { b1: 'Brightfield', b2: 'Murkfen', b3: 'the Hollow Keep', b4: 'Frostspire' };
+function waystoneOpen(id) { const w = ZONES[id].waystone; return !!w && (!w.need || !!G.beacons[w.need]); }
+function travelStart(id) {
+  const c = ctrlHero();
+  if (!waystoneOpen(id)) { toast('That waystone is still dark.'); sfx('deny'); return; }
+  if (G.inCombat) { toast('You cannot travel while in combat.'); sfx('deny'); return; }
+  if (c.dead) return;
+  if (G.mounted) dismount(true);
+  closeWindows();
+  G.travel = { to: id, t: 0, dur: 2, x: c.x, y: c.y, hp: c.hp };
+  sfx('cast');
+}
+function travelTick(dt) {
+  const tr = G.travel; if (!tr) return;
+  const c = ctrlHero();
+  tr.t += dt;
+  if (Math.random() < .5) G.fx.push({ k: 'p', x: c.x + rnd(-14, 14), y: c.y - rnd(0, 30), vx: 0, vy: -60, col: '#7dffc8', t: 0, dur: .6, sz: 3 });
+  if (G.inCombat || c.dead || Math.hypot(c.x - tr.x, c.y - tr.y) > 8 || c.hp < tr.hp) { G.travel = null; toast('Travel interrupted.'); return; }
+  if (tr.t >= tr.dur) {
+    const id = tr.to, w = ZONES[id].waystone; G.travel = null;
+    sfx('tele'); burstFx(c.x, c.y - 20, 50, '#7dffc8', 20);
+    fadeTo(() => { enterZone(id, null, [(w.x + .5) * TILE, (w.y + 1.7) * TILE]); saveGame(true); });
+  }
+}
+function openTravel() {
+  const w = $('winTravel');
+  w.innerHTML = `<h2>Waystones <button class="x" data-close="winTravel" aria-label="Close">×</button></h2>
+    <p style="margin:0 0 10px;color:#cfc8b6;max-width:52ch">Channel for 2 seconds to travel to a waystone you have woken. Each zone's waystone wakes when you relight its beacon. Lanternhold's is always open.</p>
+    <div class="travelList">${TRAVEL_ORDER.map(id => { const z = ZONES[id], open = waystoneOpen(id), here = G.zone && G.zone.id === id, need = z.waystone.need;
+      return `<button class="btn ${open ? 'primary' : ''}" data-tr="${id}" ${open ? '' : 'disabled'}><b>${z.name}</b><span>${open ? (here ? 'You are here' : 'Travel') : 'Relight the beacon of ' + BEACON_ZONE_NAME[need]}</span></button>`; }).join('')}</div>`;
+  w.hidden = false;
+  w.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => travelStart(b.dataset.tr));
+}
+
+/* ---------- Riding Lumen ---------- */
+function mountToggle() {
+  if (G.mounted) { dismount(); return; }
+  if (G.mountCast) return;
+  if (P.handan.dead || P.orhun.dead) { toast('Both heroes must be standing to ride Lumen.'); sfx('deny'); return; }
+  if (G.inCombat) { toast('Lumen will not carry you into a fight.'); sfx('deny'); return; }
+  G.travel = null;
+  G.mountCast = { t: 0, dur: 1.3 };
+  P.handan.swingT = 1.3; P.handan.face = P.fox.x >= P.handan.x ? 1 : -1;
+  ring(P.fox.x, P.fox.y, 46, '#46c495'); sfx('cast');
+}
+function mountUp() {
+  G.mounted = true;
+  const d = ctrlHero();
+  for (const h of heroes()) { h.buffs = h.buffs.filter(b => b.id !== 'mounted'); h.buffs.push({ id: 'mounted', dur: 1e9, t: 1e9, tick: 1, mods: { speed: 1.9 } }); h.path = null; }
+  P.fox.x = d.x; P.fox.y = d.y;
+  burstFx(d.x, d.y - 16, 50, '#7dffc8', 26); sfx('heal');
+  floatText(d.x, d.y - 80, 'Lumen grows!', '#c9f5df', 1.1);
+}
+function dismount(quiet) {
+  if (!G.mounted) return;
+  G.mounted = false;
+  for (const h of heroes()) h.buffs = h.buffs.filter(b => b.id !== 'mounted');
+  const d = ctrlHero(), o = otherHero();
+  o.x = d.x - 24; o.y = d.y + 10; P.fox.x = d.x + 14; P.fox.y = d.y + 18;
+  if (!quiet) { sparkle(P.fox, '#7dffc8'); sfx('ui'); }
+}
+function mountTick(dt) {
+  if (G.mountCast) {
+    const mc = G.mountCast; mc.t += dt; P.handan.swingT = Math.max(P.handan.swingT, .2);
+    if (Math.random() < .7) G.fx.push({ k: 'p', x: P.fox.x + rnd(-24, 24), y: P.fox.y - rnd(0, 20), vx: 0, vy: -50, col: Math.random() < .5 ? '#7dffc8' : '#fff2b0', t: 0, dur: .7, sz: 3 });
+    if (G.inCombat || P.handan.dead) G.mountCast = null;
+    else if (mc.t >= mc.dur) { G.mountCast = null; mountUp(); }
+  }
+  if (G.mounted) {
+    if (G.inCombat || P.orhun.dead || P.handan.dead) { dismount(); return; }
+    const d = ctrlHero(), o = otherHero();
+    o.x = d.x; o.y = d.y; o.dir = d.dir; o.face = d.face; o.moving = d.moving; o.path = null;
+    P.fox.x = d.x; P.fox.y = d.y; P.fox.face = d.face; P.fox.moving = d.moving;
+  }
+}
+
+/* ---------- Auto-cast (only in combat) ---------- */
+G.autoCast = !!load('jadeborn_auto');
+function setAutoCast(on) {
+  G.autoCast = on; store('jadeborn_auto', on);
+  for (const id of ['bAuto', 'mAuto']) { const b = $(id); if (b) b.textContent = 'Auto-cast: ' + (on ? 'on' : 'off'); }
+  toast(on ? 'Auto-cast on: abilities fire by themselves during fights.' : 'Auto-cast off.');
+}
+function autoCast(h) {
+  if (h.dead || h.dash || h.gcd > 0 || has(h, 'stun')) return;
+  const eng = engagedFoes(); if (!eng.length) return;
+  const ok = i => G.level >= ABIL[h.key][i].lvl && abilityReady(h, ABIL[h.key][i]) === 'ok';
+  const use = (i, t) => useAbility(h, i, t, true);
+  const mine = h === ctrlHero() ? G.target : h.target;
+  if (h.key === 'orhun') {
+    const t = (mine && mine.team === 'foe' && !mine.dead) ? mine : eng.slice().sort((a, b) => dist(a, h) - dist(b, h))[0];
+    if (!t) return;
+    const d = dist(h, t) - t.r - h.r;
+    if (eng.some(f => { const ft = foeTarget(f); return ft && ft !== P.orhun && dist(f, h) < 5 * TILE; }) && ok(1)) return use(1);
+    if (h.hp / h.maxHp < .45 && ok(3)) return use(3);
+    if (d < 2 * TILE) {
+      if (h.res >= 40 && (t.hp / t.maxHp < .3 || h.res >= 75) && ok(4)) return use(4, t);
+      if (foesNear(h, 2.3 * TILE).length >= 2 && ok(2)) return use(2);
+      if (ok(0)) return use(0, t);
+    } else if (d > 3 * TILE && d < 8 * TILE && ok(5)) return use(5, t);
+  } else {
+    const lo = heroes().filter(x => !x.dead).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+    if (lo && lo.hp / lo.maxHp < .62 && ok(2)) return use(2, lo);
+    if (!P.orhun.dead && eng.some(f => foeTarget(f) === P.orhun) && !P.orhun.buffs.some(b => b.id === 'ward') && ok(4)) return use(4, P.orhun);
+    const close = eng.find(f => foeTarget(f) === h && dist(f, h) < 3 * TILE && !f.def.boss && !has(f, 'root'));
+    if (close && ok(1)) return use(1, close);
+    let t = (mine && mine.team === 'foe' && !mine.dead) ? mine : (P.orhun.target && !P.orhun.target.dead ? P.orhun.target : null);
+    if (!t) t = eng.slice().sort((a, b) => dist(a, h) - dist(b, h))[0];
+    if (!t || dist(h, t) - t.r > 8 * TILE || !lineClear(h.x, h.y - 10, t.x, t.y - 10, 3)) return;
+    const reserve = h.res > h.resMax * .3;
+    if (foesNearPt(t.x, t.y, 2.5 * TILE).length >= 3 && reserve && ok(5)) return use(5, t);
+    if (reserve && t.maxHp > 100 && t.hp / t.maxHp > .3 && !t.buffs.some(b => b.id === 'wither') && ok(3)) return use(3, t);
+    if (h.res > h.resMax * .22 && ok(0)) return use(0, t);
+  }
+}
+
+/* ---------- Hearts when Handan heals Orhun ---------- */
+const _heal0 = heal;
+heal = function (src, tgt, amt, quiet) {
+  const real = _heal0(src, tgt, amt, quiet);
+  if (real > 0 && src && src.key === 'handan' && tgt && tgt.key === 'orhun' && (!quiet || amt > tgt.maxHp * .2) && G.t - (G.lastHeart || -9) > .45) {
+    G.lastHeart = G.t;
+    G.fx.push({ k: 'heart', x: tgt.x, y: tgt.y - 46, bx: tgt.x, by: tgt.y, h: 2.15, t: 0, dur: 1.5, s: 1 });
+    for (let i = 0; i < 4; i++) { const ox = rnd(-18, 18); G.fx.push({ k: 'heart', x: tgt.x + ox, y: tgt.y - rnd(20, 40), bx: tgt.x + ox, by: tgt.y + rnd(-6, 6), h: 1.3 + Math.random() * .6, t: -i * .08, dur: 1 + Math.random() * .4, s: .45 }); }
+  }
+  return real;
+};
+
+/* ---------- Hooks into the simulation ---------- */
+const _dd0 = dealDamage;
+dealDamage = function (src, tgt, amt, o) { if (G.mounted && tgt && tgt.hero) dismount(); return _dd0(src, tgt, amt, o); };
+const _ua0 = useAbility;
+useAbility = function (h, idx, explicit, quiet) { if (G.mounted) dismount(true); if (G.mountCast) G.mountCast = null; return _ua0(h, idx, explicit, quiet); };
+const _dodge0 = dodge;
+dodge = function (h, dx, dy) { if (G.mounted) dismount(true); return _dodge0(h, dx, dy); };
+const _hai0 = heroAI;
+heroAI = function (h, dt) { if (G.mounted || G.mountCast) { h.moving = false; return; } return _hai0(h, dt); };
+const _fox0 = foxTick;
+foxTick = function (f, dt) { if (G.mounted) { f.t += dt; return; } if (G.mountCast) { f.t += dt; f.moving = false; return; } return _fox0(f, dt); };
+const _upd0 = update;
+update = function (dt) {
+  _upd0(dt);
+  if (G.paused || G.dialog || !G.started) return;
+  travelTick(dt); mountTick(dt);
+  if (G.autoCast && G.inCombat && !G.mounted) { autoCast(ctrlHero()); if (G.coop) autoCast(P.handan); }
+  updateChannelBar();
+};
+function updateChannelBar() {
+  const el = $('chan'); if (!el) return;
+  const a = G.travel ? { n: 'Travelling to ' + ZONES[G.travel.to].name, p: G.travel.t / G.travel.dur } : G.mountCast ? { n: 'Handan conjures Lumen', p: G.mountCast.t / G.mountCast.dur } : null;
+  el.hidden = !a; if (a) { el.querySelector('span').textContent = a.n; el.querySelector('i').style.width = Math.min(100, a.p * 100) + '%'; }
+}
+
+/* ---------- UI wiring ---------- */
+(function () {
+  const st = document.createElement('style');
+  st.textContent = `#winTravel{width:460px}.travelList{display:flex;flex-direction:column;gap:6px}.travelList .btn{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;font-size:13px;text-transform:none;letter-spacing:0;text-align:left}.travelList .btn b{font-family:var(--display);font-size:16px;font-weight:400}.travelList .btn span{font-size:12px;color:#cfc8b6}.travelList .btn[disabled]{opacity:.5;cursor:default}
+  #chan{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));width:260px;z-index:15;padding:6px 10px;display:flex;flex-direction:column;gap:4px;pointer-events:none;text-align:center;font:600 12px var(--body);color:#c9f5df}
+  #chan .bar{height:8px}#chan .bar i{background:linear-gradient(90deg,#2b7d5f,#7dffc8)}`;
+  document.head.appendChild(st);
+  const tw = document.createElement('div'); tw.id = 'winTravel'; tw.className = 'win'; tw.hidden = true; document.body.appendChild(tw);
+  const ch = document.createElement('div'); ch.id = 'chan'; ch.className = 'frame'; ch.hidden = true; ch.innerHTML = '<span></span><div class="bar"><i style="width:0"></i></div>'; document.body.appendChild(ch);
+  const mm = document.querySelector('.mmbtns');
+  const tb = document.createElement('button'); tb.className = 'btn'; tb.id = 'bTravel'; tb.title = 'Waystones (T)'; tb.innerHTML = 'Travel<kbd>T</kbd>'; tb.onclick = () => { SND.init(); $('winTravel').hidden ? openTravel() : ($('winTravel').hidden = true); };
+  mm.insertBefore(tb, $('bHelp'));
+  const menu = $('menu');
+  const ab = document.createElement('button'); ab.className = 'btn'; ab.id = 'bAuto'; ab.textContent = 'Auto-cast: ' + (G.autoCast ? 'on' : 'off'); ab.title = 'Z'; ab.onclick = () => setAutoCast(!G.autoCast);
+  const mb = document.createElement('button'); mb.className = 'btn'; mb.id = 'bMount'; mb.textContent = 'Ride Lumen'; mb.title = 'V'; mb.onclick = () => { SND.init(); mountToggle(); };
+  menu.insertBefore(mb, menu.firstChild); menu.insertBefore(ab, menu.firstChild);
+})();
 /* ===================== RENDER ===================== */
 const ovCv = document.createElement('canvas'), octx = ovCv.getContext('2d');
 G.barks = [];
@@ -2225,6 +2673,7 @@ function render(dt) {
     const X = (p.x + .5) * TILE, Y = (p.y + .5) * TILE, bob = Math.sin(t * 3 + p.x) * 2;
     g.fillStyle = 'rgba(200,255,230,.18)'; g.beginPath(); g.ellipse(X, Y + 4, 14, 6, 0, 0, 7); g.fill();
     if (p.item === 'moonpetal') { g.fillStyle = '#3a6a3a'; g.fillRect(X - 1, Y - 6, 2, 10); for (let i = 0; i < 5; i++) { const a = i / 5 * 6.28 + t * .3; g.fillStyle = '#d8e8ff'; g.beginPath(); g.ellipse(X + Math.cos(a) * 5, Y - 9 + Math.sin(a) * 4 + bob, 3.5, 2.2, a, 0, 7); g.fill(); } g.fillStyle = '#ffe9a0'; g.beginPath(); g.arc(X, Y - 9 + bob, 2, 0, 7); g.fill(); }
+    else if (p.item === 'ember') { g.fillStyle = 'rgba(160,210,240,.55)'; g.beginPath(); g.moveTo(X - 9, Y + 2); g.lineTo(X - 6, Y - 14 + bob); g.lineTo(X + 7, Y - 16 + bob); g.lineTo(X + 10, Y + 2); g.closePath(); g.fill(); g.fillStyle = '#ff9a3a'; g.shadowColor = '#ffaa44'; g.shadowBlur = 10; g.beginPath(); g.arc(X, Y - 6 + bob, 4, 0, 7); g.fill(); g.shadowBlur = 0; g.fillStyle = '#fff2c0'; g.fillRect(X - 1, Y - 8 + bob, 2, 2); }
     else if (p.item === 'token') { g.fillStyle = '#e0a64e'; g.beginPath(); g.arc(X, Y - 8 + bob, 6, 0, 7); g.fill(); g.fillStyle = '#7a5420'; g.fillRect(X - 2, Y - 11 + bob, 4, 6); g.fillStyle = '#fff2c0'; g.fillRect(X - 1, Y - 10 + bob, 2, 2); }
     else { g.fillStyle = '#46c495'; g.beginPath(); g.moveTo(X, Y - 22 + bob); g.lineTo(X + 7, Y - 8 + bob); g.lineTo(X, Y + 2 + bob); g.lineTo(X - 7, Y - 8 + bob); g.closePath(); g.fill(); g.fillStyle = '#c9f5df'; g.beginPath(); g.moveTo(X, Y - 20 + bob); g.lineTo(X + 3, Y - 9 + bob); g.lineTo(X, Y - 4 + bob); g.closePath(); g.fill(); }
   }
@@ -2246,8 +2695,12 @@ function render(dt) {
   for (const b of z.beacons) ds.push({ y: (b.y + .5) * TILE + 8, f: () => drawBeacon(g, b, t) });
   for (const n of G.npcs) if (inView(n.x, n.y)) ds.push({ y: n.y, f: () => drawNpc(g, n, t) });
   for (const f of G.foes) if (inView(f.x, f.y, 120)) ds.push({ y: f.y, f: () => drawFoe(g, f) });
-  for (const h of heroes()) ds.push({ y: h.y, f: () => drawHero(g, h) });
-  if (!P.fox.dead && !P.handan.dead) ds.push({ y: P.fox.y, f: () => drawFox(g, P.fox) });
+  if (G.mounted) { const d = ctrlHero(); ds.push({ y: d.y, f: () => drawMount(g, d) }); }
+  else {
+    for (const h of heroes()) ds.push({ y: h.y, f: () => drawHero(g, h) });
+    if (!P.fox.dead && !P.handan.dead) ds.push({ y: P.fox.y, f: () => drawFox(g, P.fox) });
+  }
+  if (z.waystone && waystoneOpen(z.id)) { const X = (z.waystone.x + .5) * TILE, Y = z.waystone.y * TILE; ds.push({ y: Y + 24, f: () => { g.fillStyle = `rgba(125,255,200,${.55 + Math.sin(t * 3) * .25})`; g.fillRect(X - 2, Y - 8, 4, 12); g.fillRect(X - 4, Y - 4, 8, 3); g.fillStyle = 'rgba(125,255,200,.18)'; g.beginPath(); g.ellipse(X, Y + 26, 18, 7, 0, 0, 7); g.fill(); } }); }
   for (const d of z.decor) if (d.type === 'lantern' || d.type === 'brazier' || d.type === 'campfire') { }
   ds.sort((a, b) => a.y - b.y); for (const d of ds) d.f();
 
@@ -2260,6 +2713,7 @@ function render(dt) {
     else if (f.k === 'ring') { g.globalAlpha = 1 - u; g.strokeStyle = f.col; g.lineWidth = 3 * (1 - u) + 1; g.beginPath(); g.ellipse(f.x, f.y, f.r * (.3 + u * .7), f.r * (.3 + u * .7) * .7, 0, 0, 7); g.stroke(); }
     else if (f.k === 'slash') { g.globalAlpha = 1 - u; g.strokeStyle = f.big ? '#ffb08a' : '#f4f6ff'; g.lineWidth = f.big ? 4 : 2.5; g.beginPath(); g.arc(f.x, f.y, f.big ? 22 : 15, f.a + u * 2, f.a + u * 2 + 1.6); g.stroke(); }
     else if (f.k === 'spin') { g.globalAlpha = (1 - u) * .8; g.strokeStyle = f.col; g.lineWidth = 3; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(f.x, f.y, f.r * (.5 + i * .2), u * 9 + i * 2, u * 9 + i * 2 + 2.2); g.stroke(); } }
+    else if (f.k === 'heart') { if (f.t < 0) continue; const s2 = (f.s || 1) * (1 + Math.min(1, f.t * 6) * .3); drawHeart(g, f.x, f.y - u * 34, 13 * s2, `rgba(255,${110 + 40 * (1 - u)},150,${1 - u * u})`); }
     else if (f.k === 'vines' && f.e && !f.e.dead) { g.globalAlpha = Math.min(1, (f.dur - f.t) * 2); g.strokeStyle = '#6aa04a'; g.lineWidth = 2; for (let i = 0; i < 5; i++) { const a = i * 1.25 + f.t; g.beginPath(); g.moveTo(f.e.x + Math.cos(a) * 14, f.e.y + 2); g.quadraticCurveTo(f.e.x + Math.cos(a) * 18, f.e.y - 14, f.e.x + Math.cos(a + 1) * 6, f.e.y - 18 - (i % 2) * 6); g.stroke(); } }
     g.globalAlpha = 1;
   }
@@ -2298,7 +2752,7 @@ function render(dt) {
   }
   // beacon prompt
   const nb = nearestBeacon();
-  if (nb && !G.beacons[nb.id] && G.bossDead[{ b1: 'gnarl', b2: 'witch', b3: 'king' }[nb.id]]) { textOutlined(g, 'Press E to relight the beacon', (nb.x + .5) * TILE, nb.y * TILE - 50, '#c9f5df', 13); }
+  if (nb && !G.beacons[nb.id] && G.bossDead[BEACON_BOSS[nb.id]]) { textOutlined(g, 'Press E to relight the beacon', (nb.x + .5) * TILE, nb.y * TILE - 50, '#c9f5df', 13); }
   const nn = nearestNpc();
   if (nn && !G.dialog) textOutlined(g, 'E  Talk to ' + NPCS[nn.id].name, nn.x, nn.y + 22, '#f2e6c8', 12);
   // barks
@@ -2331,6 +2785,23 @@ function render(dt) {
 function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function textOutlined(g, s, x, y, col, size) { g.font = `700 ${size}px "Alegreya Sans", sans-serif`; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(s, x, y); g.fillStyle = col; g.fillText(s, x, y); }
 
+function drawHeart(g, x, y, r, col) {
+  g.fillStyle = col; g.beginPath(); g.moveTo(x, y + r * .9);
+  g.bezierCurveTo(x - r * 1.3, y - r * .1, x - r * .7, y - r * 1.1, x, y - r * .35);
+  g.bezierCurveTo(x + r * .7, y - r * 1.1, x + r * 1.3, y - r * .1, x, y + r * .9); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.arc(x - r * .38, y - r * .38, r * .18, 0, 7); g.fill();
+}
+function drawMount(g, d) {
+  const face = d.face || 1, f = P.fox, bob = d.moving ? Math.abs(Math.sin(d.t * 9)) * 2 : 0;
+  const fx = { x: 0, y: 0, t: f.t || d.t, face, moving: d.moving };
+  g.save(); g.translate(d.x, d.y + 4); g.scale(4.3, 4.3); drawFox(g, fx); g.restore();
+  drawHumanoid(g, 'handan', LOOKS.handan, d.x - 12 * face, d.y - 30 - bob, 2, 0, face < 0);
+  drawHumanoid(g, 'orhun', LOOKS.orhun, d.x + 6 * face, d.y - 28 - bob, 2, 0, face < 0);
+  // Lumen's head and tail tip in front of the riders
+  g.save(); g.translate(d.x + 34 * face, d.y - 43 - bob * .5); g.fillStyle = '#46c495'; g.beginPath(); g.ellipse(0, 0, 18, 15, 0, 0, 7); g.fill();
+  g.beginPath(); g.moveTo(-10 * face, -10); g.lineTo(-6 * face, -30); g.lineTo(2 * face, -12); g.fill(); g.beginPath(); g.moveTo(2 * face, -12); g.lineTo(10 * face, -28); g.lineTo(12 * face, -8); g.fill();
+  g.fillStyle = '#c9f5df'; g.fillRect(8 * face - (face < 0 ? 12 : 0), 2, 12, 7); g.fillStyle = '#0a1a14'; g.fillRect(4 * face - 3, -5, 6, 6); g.fillRect(18 * face - 2, 5, 4, 4); g.restore();
+}
 function drawHero(g, h) {
   if (h.dead) { g.save(); g.globalAlpha = .7; g.translate(h.x, h.y); g.rotate(1.57 * (h.face || 1)); drawHumanoid(g, h.key, LOOKS[h.key], 0, 10, 2, 0, false, .6); g.restore(); return; }
   const frame = h.swingT > 0 ? 3 : h.moving ? (Math.floor(h.t * 8) % 2 ? 1 : 2) : 0;
@@ -2338,17 +2809,29 @@ function drawHero(g, h) {
   if (h.buffs.some(b => b.id === 'ward')) { g.fillStyle = 'rgba(138,255,224,.14)'; g.strokeStyle = 'rgba(138,255,224,.55)'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(h.x, h.y - 22, 20, 28, 0, 0, 7); g.fill(); g.stroke(); }
   if (h.buffs.some(b => b.id === 'ironhide')) { g.strokeStyle = 'rgba(159,195,238,.8)'; g.lineWidth = 2; g.beginPath(); g.ellipse(h.x, h.y - 22, 18, 26, 0, 0, 7); g.stroke(); }
   if (h.flash) g.filter = 'brightness(1.8) saturate(.5)';
+  if (h.iframes > 0) { g.save(); g.globalAlpha = h.key === 'handan' ? .35 : .7; }
   drawHumanoid(g, h.key, LOOKS[h.key], h.x, h.y, dir, frame, dir === 2 && h.face < 0);
+  if (h.iframes > 0) g.restore();
   g.filter = 'none';
   if (h.buffs.some(b => b.mods && b.mods.root)) { g.strokeStyle = '#6aa04a'; g.lineWidth = 2; g.beginPath(); g.ellipse(h.x, h.y, 12, 5, 0, 0, 7); g.stroke(); }
+}
+// Recolour a foe without canvas filters (slow on phones): draw offscreen, then wash it with the tint colour.
+const TCV = document.createElement('canvas'); TCV.width = 256; TCV.height = 224; const tcx = TCV.getContext('2d');
+function drawTintedFoe(g, f) {
+  tcx.setTransform(1, 0, 0, 1, 0, 0); tcx.globalCompositeOperation = 'source-over'; tcx.globalAlpha = 1; tcx.clearRect(0, 0, 256, 224);
+  drawFoeShape(tcx, f, 128, 180);
+  tcx.globalCompositeOperation = 'source-atop';
+  if (f.def.tint) { tcx.globalAlpha = f.def.tint.a * .8; tcx.fillStyle = f.def.tint.c; tcx.fillRect(0, 0, 256, 224); }
+  if (f.flash) { tcx.globalAlpha = .55; tcx.fillStyle = '#ffffff'; tcx.fillRect(0, 0, 256, 224); }
+  tcx.globalAlpha = 1; tcx.globalCompositeOperation = 'source-over';
+  g.drawImage(TCV, f.x - 128, f.y - 180);
 }
 function drawFoe(g, f) {
   const a = f.dead ? Math.max(0, 1 - f.deathT) : (f.evade ? .6 : 1);
   g.save(); g.globalAlpha = a;
-  if (f.flash) g.filter = 'brightness(2.2)';
   f.moving = f.moving && !f.dead;
-  drawFoeShape(g, f, f.x, f.y);
-  g.filter = 'none';
+  if (f.def.tint || (f.flash && f.def.boss)) drawTintedFoe(g, f);
+  else { if (f.flash) g.filter = 'brightness(2.2)'; drawFoeShape(g, f, f.x, f.y); g.filter = 'none'; }
   if (f.buffs.some(b => b.mods && b.mods.stun)) { for (let i = 0; i < 3; i++) { const ang = f.t * 5 + i * 2.1; g.fillStyle = '#ffe6a8'; g.fillRect(f.x + Math.cos(ang) * 10 - 1.5, f.y - 36 * (f.def.scale || 1) + Math.sin(ang) * 3, 3, 3); } }
   if (f.bs && f.bs.cast) { const c = f.bs.cast, w = 60, top = f.y - 14 - f.r * 2.6; g.fillStyle = '#000'; g.fillRect(f.x - w / 2 - 1, top - 1, w + 2, 7); g.fillStyle = '#e0a64e'; g.fillRect(f.x - w / 2, top, w * (1 - c.t / c.dur), 5); textOutlined(g, c.name, f.x, top - 4, '#ffd86a', 12); }
   g.restore();
@@ -2372,7 +2855,7 @@ function drawBeacon(g, b, t) {
   }
 }
 function npcMarker(id) {
-  for (const q of QUESTS) if (q.giver === id && G.q[q.id] && G.q[q.id].st === 'ready' && q.id !== 'q10') return { ch: '?', col: '#ffd86a' };
+  for (const q of QUESTS) if (qTurnin(q) === id && G.q[q.id] && G.q[q.id].st === 'ready' && !q.final) return { ch: '?', col: '#ffd86a' };
   for (const q of QUESTS) if (q.giver === id && qState(q.id) === 'avail') return { ch: '!', col: '#ffd86a' };
   for (const q of QUESTS) if (q.giver === id && G.q[q.id] && G.q[q.id].st === 'active') return { ch: '?', col: '#9a978e' };
   if (NPCS[id].vendor) return { ch: '$', col: '#f2c75c' };
@@ -2384,7 +2867,9 @@ function renderLights(g, z, cx, cy, t) {
   if (z.id === 'brightfield' && G.beacons.b1) dark -= .12;
   if (z.id === 'murkfen' && G.beacons.b2) dark -= .12;
   if (z.id === 'keep' && G.beacons.b3) dark -= .3;
+  if (z.id === 'frostspire' && G.beacons.b4) dark -= .18;
   if (G.eclipse) dark += .18;
+  if (G.blizzard) dark += .1;
   dark = clamp(dark, .05, .92);
   const lw = lightCv.width, lh = lightCv.height, s = ZOOM / 2;
   lctx.globalCompositeOperation = 'source-over';
@@ -2407,6 +2892,7 @@ function renderLights(g, z, cx, cy, t) {
     if (d.type === 'campfire') { L(X, d.y * TILE + 16, 190, 1); glows.push([X, d.y * TILE + 16, '#ff9a3a', 1.6, 'fire']); }
     if (d.type === 'window') { L(X + 4, d.y * TILE + 14, 60, .6); }
   }
+  if (z.waystone && waystoneOpen(z.id)) L((z.waystone.x + .5) * TILE, z.waystone.y * TILE, 110, .8);
   for (const b of z.beacons) { if (G.beacons[b.id]) L((b.x + .5) * TILE, b.y * TILE - 30, 420, 1); else L((b.x + .5) * TILE, b.y * TILE - 30, 50, .4); }
   for (const f of G.foes) if (!f.dead && f.def.light) L(f.x, f.y - 20, f.def.boss ? 160 : 90, .8);
   for (const p of G.proj) L(p.x, p.y, 50, .6);
@@ -2416,6 +2902,12 @@ function renderLights(g, z, cx, cy, t) {
   lctx.globalCompositeOperation = 'source-over';
   g.save(); g.setTransform(DPR, 0, 0, DPR, 0, 0);
   g.drawImage(lightCv, 0, 0, W, H);
+  if (z.snow) {
+    const n = G.blizzard ? 260 : 130, sp = G.blizzard ? 2.4 : 1;
+    g.fillStyle = 'rgba(240,248,255,.8)';
+    for (let i = 0; i < n; i++) { const a = hash2(i, 1, 7), b2 = hash2(i, 2, 7), sz = 1 + hash2(i, 3, 7) * 2.2; const x = ((a * (W + 80) + t * (14 + 30 * b2) * sp - cx * .3 + Math.sin(t * .8 + i) * 12) % (W + 80) + W + 80) % (W + 80) - 40; const y = ((b2 * (H + 40) + t * (34 + 40 * a) * sp - cy * .3) % (H + 40) + H + 40) % (H + 40) - 20; g.fillRect(x, y, sz, sz); }
+    if (G.blizzard) { g.fillStyle = 'rgba(200,225,255,.12)'; g.fillRect(0, 0, W, H); }
+  }
   if (z.fog) {
     g.globalAlpha = .12; g.fillStyle = '#9ac8b0';
     for (let i = 0; i < 6; i++) { const fx = ((i * 260 + t * 14 - cx * .6) % (W + 400)) - 200, fy = ((i * 170 - cy * .6) % (H + 200) + H + 200) % (H + 200) - 100; g.beginPath(); g.ellipse(fx, fy, 260, 50, 0, 0, 7); g.fill(); }
@@ -2503,6 +2995,7 @@ function updateHUD(dt) {
   } else tf.hidden = true;
   // action bar
   slotEls.forEach(s => {
+    if (s.dodge) { const hh = P[s.key], cd = hh.cds.dodge || 0; s.cdn.textContent = cd > 0 ? Math.ceil(cd) : ''; s.cd.style.setProperty('--p', (cd / DODGE[s.key].cd * 100) + '%'); return; }
     if (s.pot) { s.cdn.textContent = G.potCd > 0 ? Math.ceil(G.potCd) : ''; s.cd.style.setProperty('--p', (G.potCd / 20 * 100) + '%'); s.cost.textContent = '×' + G.potions; return; }
     const h = P[s.key], a = ABIL[s.key][s.i]; if (!a) return;
     const locked = G.level < a.lvl;
@@ -2511,7 +3004,7 @@ function updateHUD(dt) {
     const gcdP = h.gcd > 0 && cd <= 0 ? h.gcd / GCD : 0;
     s.cd.style.setProperty('--p', (Math.max(cd / total, gcdP) * 100) + '%');
     s.cdn.textContent = cd > 0 ? (cd < 10 ? cd.toFixed(1) : Math.ceil(cd)) : '';
-    s.el.classList.toggle('oom', h.res < a.cost);
+    s.el.classList.toggle('oom', h.res < acost(h, a));
   });
   const gp = Math.floor(G.gauge);
   $('gauge').querySelector('i').style.width = gp + '%'; $('gauge').classList.toggle('full', gp >= 100);
@@ -2545,6 +3038,13 @@ function buildActionBar() {
     bindTip(pe, () => `<div class="t">Healing Draught</div><div class="s">${G.potions} carried · 20s shared cooldown</div><div style="margin-top:4px">Restores 45% of the drinking hero's health. Sela and Dorrak supply them.</div>`);
     bar.appendChild(pe);
     slotEls.push({ el: pe, cd: pe.querySelector('.cd'), cdn: pe.querySelector('.cdn'), cost: pe.querySelector('.cost'), key, pot: true });
+    const de = document.createElement('div'); de.className = 'slot dodge';
+    de.innerHTML = `<canvas width="48" height="48"></canvas><div class="cd"></div><div class="cdn"></div><span class="key">${G.coop ? (key === 'handan' ? 'R⇧' : 'L⇧') : '⇧'}</span>`;
+    drawIcon(de.querySelector('canvas'), { bg: key === 'orhun' ? '#3a2a14' : '#0f3a30', fg: key === 'orhun' ? '#ffd9a0' : '#9ff5d0', s: key === 'orhun' ? 'roll' : 'blink' });
+    de.addEventListener('click', () => { if (TOUCH_UI) return; dodge(G.coop ? P[key] : ctrlHero()); });
+    bindTip(de, () => `<div class="t">${DODGE[key].name}</div><div class="s">${HERO[key].name} · ${DODGE[key].cd}s cooldown · Shift</div><div style="margin-top:4px">${key === 'orhun' ? 'Roll a few yards in the direction you are moving. Attacks pass through you while rolling.' : 'Step through the jade a few yards away. Attacks pass through you for a moment.'} Also breaks roots and chills.</div>`);
+    bar.appendChild(de);
+    slotEls.push({ el: de, cd: de.querySelector('.cd'), cdn: de.querySelector('.cdn'), cost: null, key, dodge: true, i: 'dodge' });
   });
 }
 function flashSlot(i, key) { const s = slotEls.find(x => !x.pot && x.key === key && x.i === i); if (!s) return; s.el.classList.add('flash'); setTimeout(() => s.el.classList.remove('flash'), 150); }
@@ -2559,7 +3059,7 @@ function renderTracker() {
   }
   el.innerHTML = act.slice(0, 4).map(q => {
     const s = G.q[q.id];
-    if (s.st === 'ready') return `<div class="q"><h4>${q.name}</h4><div class="o done">Return to ${NPCS[q.giver].name}</div></div>`;
+    if (s.st === 'ready') return `<div class="q"><h4>${q.name}</h4><div class="o done">Return to ${NPCS[qTurnin(q)].name}</div></div>`;
     return `<div class="q"><h4>${q.name}</h4>${q.obj.map((o, i) => `<div class="o ${s.prog[i] >= o.n ? 'done' : ''}">${o.label}: ${Math.min(s.prog[i], o.n)}/${o.n}</div>`).join('')}<div class="o" style="color:#8a877e;font-size:11px">${q.zone}</div></div>`;
   }).join('');
 }
@@ -2609,7 +3109,7 @@ $('dialog').addEventListener('click', advanceDialog);
 
 function talkTo(n) {
   const id = n.id; const npc = NPCS[id];
-  const ready = QUESTS.find(q => q.giver === id && G.q[q.id] && G.q[q.id].st === 'ready');
+  const ready = QUESTS.find(q => qTurnin(q) === id && G.q[q.id] && G.q[q.id].st === 'ready');
   if (ready) { playDialog([{ who: id, text: ready.done }], () => turnIn(ready)); return; }
   const avail = QUESTS.find(q => q.giver === id && qState(q.id) === 'avail');
   if (avail) {
@@ -2740,7 +3240,26 @@ function showEnding() {
     const w = $('ending'); w.hidden = false;
     w.innerHTML = `<h2 style="justify-content:center">The Ember Road is lit</h2>
       <p>Orhun and Handan relit all three beacons and broke the Hollow King. Lanternhold will see morning.</p>
+      ${G.q.q16 && G.q.q16.st === 'done' ? '' : '<p style="color:#9fdcff">But a cold wind is blowing down from the north. When you are ready, return to Lanternhold. Chapter II awaits.</p>'}
       <p style="color:#9a978e">Level ${G.level} · ${G.kills} Hollow defeated · ${G.gold} gold carried</p>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn primary" id="endStay">Keep exploring</button><button class="btn" id="endNew">Start a new journey</button></div>`;
+    $('endStay').onclick = () => { w.hidden = true; };
+    $('endNew').onclick = () => { w.hidden = true; newGame(); };
+  });
+}
+function showEnding2() {
+  G.ended = true;
+  playDialog([
+    { who: 'narrator', text: 'The Forge of the First Flame roars back to life. Far below, every lantern in Velmara burns a little brighter, and by morning the north road is green again.' },
+    { who: 'kael', text: 'Twenty years I watched that chimney. I never thought I would see smoke from it again.' },
+    { who: 'handan', text: 'The pendant is warm. It feels finished, like it was waiting for this the whole time.' },
+    { who: 'orhun', text: 'So what now? There are no more beacons left to light.' },
+    { who: 'handan', text: 'Now we walk home. Slowly. Together.' },
+  ], () => {
+    const w = $('ending'); w.hidden = false;
+    w.innerHTML = `<h2 style="justify-content:center">The First Flame burns</h2>
+      <p>Orhun and Handan relit the Forge of the First Flame and broke Vyrmhal, the Cold Crown. The lanterns of Velmara will not go dark again.</p>
+      <p style="color:#9a978e">Level ${G.level} · ${G.kills} foes defeated · ${G.gold} gold carried</p>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:12px"><button class="btn primary" id="endStay">Keep exploring</button><button class="btn" id="endNew">Start a new journey</button></div>`;
     $('endStay').onclick = () => { w.hidden = true; };
     $('endNew').onclick = () => { w.hidden = true; newGame(); };
@@ -2752,12 +3271,12 @@ const SAVE_KEY = 'jadeborn_ember_road_v1';
 function serialize() {
   const c = ctrlHero();
   return { v: 1, zone: G.zone ? G.zone.id : 'town', pos: [c.x, c.y], ctrl: G.ctrl, level: G.level, xp: G.xp, gold: G.gold, inv: G.inv, equip: G.equip, potions: G.potions, q: G.q, beacons: G.beacons,
-    bossDead: G.bossDead, talents: G.talents, talentPicks: G.talentPicks, picked: G.picked, gauge: G.gauge, vendorStock: G.vendorStock, seen: G.seenBanter, gate: G.gateOpen, kills: G.kills, ended: G.ended,
+    bossDead: G.bossDead, talents: G.talents, talentPicks: G.talentPicks, picked: G.picked, gauge: G.gauge, vendorStock: G.vendorStock, seen: G.seenBanter, gate: G.gateOpen, frostGate: !!G.frostGate, kills: G.kills, ended: G.ended,
     hp: { orhun: P.orhun.hp, handan: P.handan.hp }, coop: G.coop };
 }
 function saveGame(silent) { if (!G.started) return; const ok = store(SAVE_KEY, serialize()); if (!silent) toast(ok ? 'Journey saved.' : 'Saving is blocked in this browser.'); }
 function resetState() {
-  Object.assign(G, { ctrl: 'orhun', coop: G.coop, level: 1, xp: 0, gold: 15, inv: [], potions: 3, potCd: 0, gauge: 0, equip: { orhun: {}, handan: {} }, q: {}, beacons: {}, bossDead: {}, talents: { orhun: {}, handan: {} }, talentPicks: {}, picked: {}, gateOpen: false, target: null, seenBanter: {}, wipeT: 0, kills: 0, ended: false, pendingTalent: null, dialog: null });
+  Object.assign(G, { ctrl: 'orhun', coop: G.coop, level: 1, xp: 0, gold: 15, inv: [], potions: 3, potCd: 0, gauge: 0, equip: { orhun: {}, handan: {} }, q: {}, beacons: {}, bossDead: {}, talents: { orhun: {}, handan: {} }, talentPicks: {}, picked: {}, gateOpen: false, frostGate: false, blizzard: false, eclipse: false, target: null, seenBanter: {}, wipeT: 0, kills: 0, ended: false, pendingTalent: null, dialog: null });
   P.orhun = makeHero('orhun'); P.handan = makeHero('handan'); P.fox = makeFox();
   recalcStats();
   for (const h of heroes()) h.hp = h.maxHp; P.handan.res = P.handan.resMax; P.fox.hp = P.fox.maxHp;
@@ -2765,7 +3284,7 @@ function resetState() {
 function loadState(d) {
   resetState();
   Object.assign(G, { ctrl: d.ctrl || 'orhun', level: d.level, xp: d.xp, gold: d.gold, inv: d.inv || [], equip: d.equip || { orhun: {}, handan: {} }, potions: d.potions, q: d.q || {}, beacons: d.beacons || {}, bossDead: d.bossDead || {},
-    talents: d.talents || { orhun: {}, handan: {} }, talentPicks: d.talentPicks || {}, picked: d.picked || {}, gauge: d.gauge || 0, vendorStock: d.vendorStock || [], seenBanter: d.seen || {}, gateOpen: !!d.gate, kills: d.kills || 0, ended: !!d.ended, coop: !!d.coop });
+    talents: d.talents || { orhun: {}, handan: {} }, talentPicks: d.talentPicks || {}, picked: d.picked || {}, gauge: d.gauge || 0, vendorStock: d.vendorStock || [], seenBanter: d.seen || {}, gateOpen: !!d.gate, frostGate: !!d.frostGate, kills: d.kills || 0, ended: !!d.ended, coop: !!d.coop });
   recalcStats();
   for (const h of heroes()) h.hp = h.maxHp; P.handan.res = P.handan.resMax;
   for (const lv in TALENTS) if (G.level >= +lv && !G.talentPicks[lv]) { G.pendingTalent = +lv; break; }
@@ -2773,8 +3292,8 @@ function loadState(d) {
 }
 
 /* ---------- Input wiring ---------- */
-function anyWindowOpen() { return ['winChar', 'winQuests', 'help', 'talent', 'ending'].some(id => !$(id).hidden); }
-function closeWindows() { let any = false; for (const id of ['winChar', 'winQuests', 'help']) if (!$(id).hidden) { $(id).hidden = true; any = true; } hideTip(); vendorMode = false; return any; }
+function anyWindowOpen() { return ['winChar', 'winQuests', 'help', 'talent', 'ending', 'winTravel'].some(id => $(id) && !$(id).hidden); }
+function closeWindows() { let any = false; for (const id of ['winChar', 'winQuests', 'help', 'winTravel']) if ($(id) && !$(id).hidden) { $(id).hidden = true; any = true; } hideTip(); vendorMode = false; return any; }
 function onKeyPress(k, e) {
   if (!G.started) { if (k === 'enter') { ($('bContinue').hidden ? $('bNew') : $('bContinue')).click(); } return; }
   SND.init();
@@ -2789,6 +3308,7 @@ function onKeyPress(k, e) {
     if (k === 'p' || code === 'Numpad0') { cycleTarget(h2); return; }
     if (k === 'n') { drinkPotion(h2); return; }
     if (k === 'm') { lanternburst(h2); return; }
+    if (k === 'shift') { dodge(code === 'ShiftRight' ? h2 : P.orhun); return; }
     if (k === 'r') { drinkPotion(P.orhun); return; }
     if (k === 'e' || k === ' ') { interact(P.orhun); return; }
     if (k === 'f') { lanternburst(P.orhun); return; }
@@ -2798,6 +3318,10 @@ function onKeyPress(k, e) {
     case 'escape': if (!closeWindows()) { G.target = null; G.autoAtk = false; } break;
     case '1': case '2': case '3': case '4': case '5': case '6': useAbility(ctrlHero(), +k - 1); break;
     case 'q': swapHero(); break;
+    case 'shift': dodge(ctrlHero()); break;
+    case 't': if ($('winTravel').hidden) openTravel(); else $('winTravel').hidden = true; break;
+    case 'v': mountToggle(); break;
+    case 'z': setAutoCast(!G.autoCast); break;
     case 'tab': cycleTarget(); break;
     case 'f': lanternburst(); break;
     case 'r': drinkPotion(); break;
@@ -2989,6 +3513,7 @@ const AMB = {
   town:        { fog: 0x111a33, near: 22, far: 52, sky: 0x6a7ab8, gnd: 0x2a2018, hI: .62, moon: 0xb8c4ff, mI: .55, exp: 1.25 },
   brightfield: { fog: 0x1d1a3c, near: 20, far: 50, sky: 0x8a7ab0, gnd: 0x2a2a18, hI: .7, moon: 0xd0c0ff, mI: .6, exp: 1.2 },
   murkfen:     { fog: 0x10241f, near: 11, far: 34, sky: 0x4a7a6a, gnd: 0x141a12, hI: .55, moon: 0xa8f0d0, mI: .38, exp: 1.25 },
+  frostspire:  { fog: 0x24304e, near: 18, far: 46, sky: 0x9ab0e0, gnd: 0x3a4250, hI: .62, moon: 0xd8e6ff, mI: .55, exp: 1.12 },
   keep:        { fog: 0x140b22, near: 16, far: 42, sky: 0x6a5a9a, gnd: 0x1a1422, hI: .62, moon: 0xb090ff, mI: .3, exp: 1.3 },
 };
 
@@ -3001,6 +3526,7 @@ function renderZone(z) {
   z.mini = mm;
 }
 const TCOL = {
+  snow: { [T.GRASS]: '#c9d6e6', [T.DGRASS]: '#b4c3d6', [T.PATH]: '#98a5b8', [T.PLAZA]: '#7c8494', [T.ICE]: '#8fbcd8', [T.TREE]: '#bccbdd', [T.ROCK]: '#b4c3d6', [T.GATE]: '#98a5b8', [T.WATER]: '#5a7a98', [T.DEEP]: '#4a6a88' },
   meadow: { [T.GRASS]: '#3f6236', [T.DGRASS]: '#33522f', [T.PATH]: '#7a6444', [T.PLAZA]: '#5d5b66', [T.MARSH]: '#34463a', [T.FLOOR]: '#3a3742', [T.WATER]: '#24384a', [T.DEEP]: '#18283a', [T.BRIDGE]: '#24384a', [T.TREE]: '#36572f', [T.ROCK]: '#3f6236', [T.WALL]: '#3a3742', [T.ROOF]: '#4a4640', [T.VOID]: '#060608', [T.GATE]: '#3a3742' },
   marsh: { [T.GRASS]: '#33473a', [T.DGRASS]: '#2b3d31', [T.PATH]: '#5a5038', [T.PLAZA]: '#4a5048', [T.MARSH]: '#2c3a33', [T.WATER]: '#1c3036', [T.DEEP]: '#132428', [T.BRIDGE]: '#1c3036', [T.TREE]: '#28382c', [T.ROCK]: '#2b3d31' },
   keep: { [T.FLOOR]: '#3b3843', [T.DGRASS]: '#343c30', [T.ROCK]: '#3b3843', [T.WALL]: '#2a2730', [T.GATE]: '#3b3843', [T.PLAZA]: '#4a4654' },
@@ -3027,6 +3553,7 @@ function build3DZone(z) {
     if (wcount >= 2) y = -.42 - deep * .08; else if (wcount === 1) y = -.12;
     else if (marsh >= 2) y = -.05;
     if (z.style === 'keep') y = 0;
+    if (z.style === 'snow') { y += (fbm(i * .15, j * .15, z.seed + 3) - .5) * .25; let ice = 0; for (const t of ts) if (t === T.ICE) ice++; if (ice >= 2) y = -.06; }
     const k = (j * W1 + i) * 3;
     pos[k] = i; pos[k + 1] = y; pos[k + 2] = j; col[k] = acc.r; col[k + 1] = acc.g; col[k + 2] = acc.b;
   }
@@ -3052,13 +3579,17 @@ function build3DZone(z) {
     list.forEach((o, i) => { E.set(o.rx || 0, o.ry || 0, o.rz || 0); Q.setFromEuler(E); P.set(o.x, o.y, o.z); Sv.set(o.sx || o.s || 1, o.sy || o.s || 1, o.sz || o.s || 1); M.compose(P, Q, Sv); im.setMatrixAt(i, M); if (o.c) { C.set(o.c); im.setColorAt(i, C); } });
     im.castShadow = shadow; im.receiveShadow = true; root.add(im); return im;
   };
-  const trunks = [], crowns = [], pines = [], deadT = [], branches = [], rocks = [], tufts = [], flowers = [], walls = [], wallsIn = [], planks = [], pillars = [];
+  const snowcaps = [], iceT = [], trunks = [], crowns = [], pines = [], deadT = [], branches = [], rocks = [], tufts = [], flowers = [], walls = [], wallsIn = [], planks = [], pillars = [];
   const greens = ['#2c5a2c', '#356b33', '#3f7a3a', '#2a4f2e', '#4a8040'];
   for (let ty = 0; ty < z.h; ty++) for (let tx = 0; tx < z.w; tx++) {
     const t = z.get(tx, ty), cx = tx + .5, cz = ty + .5, hr = hash2(tx, ty, z.seed + 5);
     const jx = (hash2(tx, ty, 91) - .5) * .4, jz = (hash2(tx, ty, 92) - .5) * .4;
     if (t === T.TREE) {
-      if (z.canopy === 'dead') {
+      if (z.canopy === 'pine') {
+        const s = .85 + hash2(tx, ty, 7) * .5;
+        trunks.push({ x: cx + jx, y: .3, z: cz + jz, sy: .6, c: '#3e2c22' });
+        for (let k = 0; k < 4; k++) { pines.push({ x: cx + jx, y: .75 + k * .5 * s, z: cz + jz, s: s * (1.05 - k * .2), c: k % 2 ? '#1e4636' : '#24503e' }); snowcaps.push({ x: cx + jx, y: .9 + k * .5 * s, z: cz + jz, s: s * (.78 - k * .16), sy: s * (.5 - k * .08), c: '#eef4fb' }); }
+      } else if (z.canopy === 'dead') {
         const h = 1.6 + hr * 1.2;
         deadT.push({ x: cx + jx, y: h / 2, z: cz + jz, sy: h, c: '#3a3028' });
         for (let k = 0; k < 3; k++) { const a = hr * 6 + k * 2.1; branches.push({ x: cx + jx + Math.cos(a) * .25, y: h * (.55 + k * .12), z: cz + jz + Math.sin(a) * .25, rz: Math.cos(a) * .9, rx: Math.sin(a) * .9, sy: .7 + k * .1, c: '#3a3028' }); }
@@ -3075,7 +3606,7 @@ function build3DZone(z) {
       }
     } else if (t === T.ROCK) {
       if (z.style === 'keep') pillars.push({ x: cx, y: 1.3, z: cz, sy: 2.6, c: '#4a4652' });
-      else rocks.push({ x: cx + jx * .5, y: .22, z: cz + jz * .5, s: .5 + hr * .35, sy: .4 + hr * .3, ry: hr * 6, c: z.style === 'marsh' ? '#4a5048' : '#6a6a72' });
+      else { const snow = z.style === 'snow', big = snow ? 1.35 : 1, rs = (.5 + hr * .35) * big, rsy = (.4 + hr * .3) * big * (snow ? 1.6 : 1); rocks.push({ x: cx + jx * .5, y: .22 * big, z: cz + jz * .5, s: rs, sy: rsy, ry: hr * 6, c: z.style === 'marsh' ? '#4a5048' : snow ? '#6e7888' : '#6a6a72' }); if (snow) snowcaps.push({ x: cx + jx * .5, y: .22 * big + .6 * rsy - .12, z: cz + jz * .5, s: rs * .82, sy: .3, ry: hr * 6, c: '#eef4fb', rock: true }); }
     } else if (t === T.WALL && z.style === 'keep') {
       const edge = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const n = z.get(tx + dx, ty + dy); return n !== T.WALL && n !== T.VOID; });
       const c = ['#55506a', '#4c4760', '#5a5470'][Math.floor(hr * 3)];
@@ -3086,6 +3617,8 @@ function build3DZone(z) {
     } else if ((t === T.GRASS || t === T.DGRASS) && z.style !== 'keep') {
       if (hr > .45) for (let k = 0; k < 2; k++) tufts.push({ x: tx + hash2(tx * 3 + k, ty, 21), y: .08, z: ty + hash2(tx, ty * 3 + k, 22), s: .7 + hash2(tx + k, ty, 23) * .6, ry: hr * 6, c: z.style === 'marsh' ? '#3a5236' : (t === T.DGRASS ? '#3a5a32' : '#4a7a3c') });
       if (hash2(tx, ty, 24) > .93 && z.style !== 'marsh') flowers.push({ x: tx + .3 + hash2(tx, ty, 25) * .4, y: .12, z: ty + .3 + hash2(tx, ty, 26) * .4, s: 1, c: ['#e8d36a', '#e08aa8', '#a9c8f0', '#f4f0e0'][Math.floor(hash2(tx, ty, 27) * 4)] });
+    } else if (t === T.ICE) {
+      iceT.push({ x: cx, y: -.02, z: cz, c: ['#a8d4ec', '#9ccbe6', '#b4dcf0'][Math.floor(hr * 3)] });
     } else if (t === T.MARSH && hr > .7) {
       tufts.push({ x: tx + hash2(tx, ty, 28), y: .1, z: ty + hash2(tx, ty, 29), s: 1.3, sy: 1.8, ry: hr * 6, c: '#4a5a32' });
     }
@@ -3094,6 +3627,9 @@ function build3DZone(z) {
   inst(gCyl(.1, .15, 1, 7), white, trunks);
   inst(gIco(.6, 1), sMat('#ffffff', { roughness: .9, flatShading: true }), crowns);
   inst(gCone(.55, .85, 7), sMat('#ffffff', { roughness: .9, flatShading: true }), pines);
+  inst(gCone(.5, .5, 7), sMat('#ffffff', { roughness: .95, flatShading: true, emissive: 0x223044 }), snowcaps.filter(o => !o.rock), false);
+  inst(gSph(.6, 9, 6), sMat('#ffffff', { roughness: .95, flatShading: true, emissive: 0x223044 }), snowcaps.filter(o => o.rock), false);
+  inst(gBox(1, .04, 1), sMat('#ffffff', { roughness: .08, metalness: .35, transparent: true, opacity: .8, emissive: 0x1a3a5a, emissiveIntensity: .5 }), iceT, false);
   inst(gCyl(.07, .14, 1, 6), white, deadT);
   inst(gCyl(.025, .05, 1, 5), white, branches);
   inst(gDodeca(), sMat('#ffffff', { roughness: .95, flatShading: true }), rocks);
@@ -3108,6 +3644,11 @@ function build3DZone(z) {
   // gates
   for (let ty = 0; ty < z.h; ty++) for (let tx = 0; tx < z.w; tx++) if (z.get(tx, ty) === T.GATE) {
     const gr = new THREE.Group(); gr.position.set(tx + .5, 0, ty + .5);
+    if (z.style === 'snow') {
+      const ice = mesh(gBox(1.02, 2.4, .7), sMat('#bfe4fa', { roughness: .1, metalness: .2, transparent: true, opacity: .72, emissive: 0x2a6a9a, emissiveIntensity: .6 }), 0, 1.2, 0, gr);
+      mesh(gBox(.5, .9, .5), sMat('#e4f4ff', { roughness: .2, transparent: true, opacity: .6 }), (hash2(tx, ty, 5) - .5) * .4, 2.5, 0, gr);
+      gr.userData.rune = glow(0x7ec8ff, 1.6, gr, 1.2, .6); root.add(gr); info.gates.push(gr); continue;
+    }
     for (let k = 0; k < 5; k++) mesh(gCyl(.035, .035, 2.4, 6), sMat('#4a4048', { metalness: .6, roughness: .4 }), 0, 1.2, -.4 + k * .2, gr);
     mesh(gBox(.12, .12, 1), sMat('#4a4048', { metalness: .6 }), 0, 2.3, 0, gr); mesh(gBox(.12, .12, 1), sMat('#4a4048', { metalness: .6 }), 0, .9, 0, gr);
     const rune = glow(0xb07cff, 1.2, gr, 1.4, .7); gr.userData.rune = rune;
@@ -3129,6 +3670,18 @@ function build3DZone(z) {
     gr.userData = { ember, fl, halo };
     root.add(gr); info.beacons[b.id] = gr;
   }
+  // waystone
+  if (z.waystone) {
+    const w = z.waystone, gr = new THREE.Group(); gr.position.set(w.x + .5, 0, w.y + .5);
+    const stone = sMat('#6e6c7a', { roughness: .8, flatShading: true });
+    mesh(gCyl(.45, .55, .25, 6), sMat('#5a5866', { flatShading: true }), 0, .12, 0, gr);
+    const ob = mesh(gCyl(.12, .26, 1.8, 4), stone, 0, 1.15, 0, gr); ob.rotation.y = Math.PI / 4;
+    mesh(gCone(.17, .35, 4), stone, 0, 2.2, 0, gr).rotation.y = Math.PI / 4;
+    const runeM = uMat('#2a2830', { emissive: 0x2affa0, emissiveIntensity: 0 });
+    mesh(gBox(.08, .45, .03), runeM, 0, 1.25, .16, gr); mesh(gBox(.26, .07, .03), runeM, 0, 1.32, .16, gr);
+    const gl = glow(0x46ffb0, 1.8, gr, 1.3, 0);
+    root.add(gr); info.waystone = { runeM, gl, x: w.x + .5, z: w.y + .5 };
+  }
   // pickups
   for (const p of z.pickups) {
     const gr = new THREE.Group(); gr.position.set(p.x + .5, 0, p.y + .5);
@@ -3138,6 +3691,10 @@ function build3DZone(z) {
       for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; const pt = mesh(gSph(.07, 8, 6), sMat('#dde8ff', { emissive: 0x8899ff, emissiveIntensity: .7 }), Math.cos(a) * .09, .42, Math.sin(a) * .09, inner); pt.scale.set(1, .4, 1.6); pt.rotation.y = -a; }
       mesh(gSph(.04, 8, 6), sMat('#ffe9a0', { emissive: 0xffcc66, emissiveIntensity: 1 }), 0, .45, 0, inner);
       glow(0xa8c0ff, 1.1, inner, .45, .8);
+    } else if (p.item === 'ember') {
+      const ic = mesh(new THREE.OctahedronGeometry(.26, 0), sMat('#cfeaff', { roughness: .1, metalness: .2, transparent: true, opacity: .55, flatShading: true }), 0, .35, 0, inner); ic.scale.set(1, 1.3, 1);
+      mesh(gSph(.08, 10, 8), sMat('#ff9a3a', { emissive: 0xff7a1a, emissiveIntensity: 2 }), 0, .35, 0, inner);
+      glow(0xffaa44, 1.3, inner, .35, .9);
     } else if (p.item === 'token') {
       const c = mesh(gCyl(.16, .16, .04, 16), sMat('#e0a64e', { metalness: .8, roughness: .3, emissive: 0x5a3a10 }), 0, .7, 0, inner); c.rotation.x = Math.PI / 2;
       mesh(gBox(.06, .12, .06), sMat('#fff2c0', { emissive: 0xffd080, emissiveIntensity: 1 }), 0, .7, .03, inner);
@@ -3498,12 +4055,61 @@ function makeFoe3D(f) {
       const ln = new THREE.Group(); ln.position.set(.32, 1.0, .15); body.add(ln);
       mesh(gBox(.1, .14, .1), M('#e0a64e', { emissive: 0xffaa44, emissiveIntensity: 1.5 }), 0, 0, 0, ln); glow(0xffaa44, .9, ln, 0, .8);
       body.position.y = .25; h = 1.9; break; }
+    case 'golem': {
+      const ice = M('#9cc4e0', { roughness: .2, metalness: .25, flatShading: true, emissive: 0x16304a, emissiveIntensity: .5 }), pale = M('#d8eefb', { roughness: .15, flatShading: true }), deep = M('#6a92b4', { roughness: .3, flatShading: true });
+      for (const sx of [-1, 1]) leg(sx * .22, .55, 0, .5, .14, deep);
+      const t1 = mesh(gIco(.5, 0), ice, 0, 1.05, 0, body); t1.scale.set(1.1, 1, .8);
+      mesh(gIco(.25, 0), pale, -.18, 1.35, .2, body);
+      mesh(gIco(.2, 0), deep, 0, 1.62, .05, body);
+      mesh(gSph(.12, 10, 8), M('#7ec8ff', { emissive: 0x4aa8ff, emissiveIntensity: 2.2 }), 0, 1.05, .36, body).castShadow = false;
+      eyes('#bfe6ff', [[-.07, 1.64, .2], [.07, 1.64, .2]], .03);
+      const ar = new THREE.Group(); ar.position.set(.55, 1.25, 0); body.add(ar); extra.arm = ar;
+      mesh(gIco(.18, 0), ice, 0, -.2, 0, ar); mesh(gIco(.24, 0), pale, 0, -.55, .05, ar);
+      const al = new THREE.Group(); al.position.set(-.55, 1.25, 0); body.add(al);
+      mesh(gIco(.18, 0), ice, 0, -.2, 0, al); mesh(gIco(.24, 0), deep, 0, -.55, .05, al);
+      for (let k = 0; k < 4; k++) { const sp = mesh(gCone(.06, .3, 4), pale, (k - 1.5) * .18, 1.5 + (k % 2) * .08, -.25, body); sp.rotation.x = -.5; }
+      glow(0x7ec8ff, 1.4, body, 1.05, .45);
+      h = 1.85; break; }
+    case 'wyrm': {
+      const sc2 = M('#a8c4dc', { roughness: .45, metalness: .15, flatShading: true }), dark = M('#5a7894', { roughness: .5, flatShading: true }), pale = M('#e2f0fb', { roughness: .4, flatShading: true });
+      const mem = M('#86a8c6', { roughness: .6, side: THREE.DoubleSide, transparent: true, opacity: .92, emissive: 0x1a3048, emissiveIntensity: .4 });
+      const tor = mesh(gSph(.8, 14, 10), sc2, 0, 1.0, 0, body); tor.scale.set(.85, .7, 1.45);
+      mesh(gSph(.6, 12, 8), pale, 0, .82, .15, body).scale.set(.75, .5, 1.25);
+      for (let k = 0; k < 6; k++) mesh(gCone(.09, .32, 4), pale, 0, 1.55, -.9 + k * .32, body);
+      for (const [x, z] of [[-.45, .6], [.45, .6], [-.45, -.6], [.45, -.6]]) leg(x, .75, z, .7, .13, dark);
+      const neck = new THREE.Group(); neck.position.set(0, 1.25, 1.0); body.add(neck); extra.neck = neck;
+      for (let k = 0; k < 4; k++) mesh(gSph(.3 - k * .03, 10, 8), sc2, 0, k * .28, k * .22, neck);
+      const hd = new THREE.Group(); hd.position.set(0, 1.15, .95); neck.add(hd); extra.head = hd;
+      mesh(gBox(.42, .34, .6), sc2, 0, 0, 0, hd);
+      mesh(gBox(.34, .14, .42), dark, 0, -.14, .38, hd); mesh(gBox(.3, .1, .36), sc2, 0, .04, .4, hd);
+      for (const sx of [-1, 1]) { const hr2 = mesh(gCone(.06, .55, 5), pale, sx * .16, .32, -.22, hd); hr2.rotation.x = -.9; hr2.rotation.z = sx * -.25; }
+      eyes('#9fdcff', [[-.17, .08, .22, hd], [.17, .08, .22, hd]], .045);
+      extra.breath = glow(0xbfe6ff, 1.2, hd, -.05, 0); extra.breath.position.z = .75;
+      const tail = new THREE.Group(); tail.position.set(0, 1.0, -1.1); body.add(tail); extra.tail2 = tail;
+      for (let k = 0; k < 6; k++) mesh(gSph(.3 - k * .045, 8, 6), sc2, 0, -k * .08, -k * .3, tail);
+      mesh(gCone(.12, .4, 4), pale, 0, -.5, -1.9, tail).rotation.x = -Math.PI / 2;
+      const wings = [];
+      for (const sx of [-1, 1]) {
+        const wg = new THREE.Group(); wg.position.set(sx * .55, 1.45, .2); body.add(wg);
+        const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(2.2, .9); sh.lineTo(2.5, -.2); sh.lineTo(1.8, -.5); sh.lineTo(1.2, -.3); sh.lineTo(.7, -.7); sh.lineTo(0, -.4); sh.lineTo(0, 0);
+        const wm = new THREE.Mesh(new THREE.ShapeGeometry(sh), mem); wm.rotation.x = -Math.PI / 2; wm.scale.x = sx; wm.castShadow = true; wg.add(wm);
+        const bone = mesh(gCyl(.04, .05, 2.4, 5), dark, sx * 1.15, 0, .45, wg); bone.rotation.z = Math.PI / 2; bone.rotation.y = sx * -.4;
+        wings.push(wg);
+      }
+      extra.wings = wings;
+      glow(0x9fdcff, 4, body, 1.2, .22);
+      h = 2.6; break; }
     case 'orb': {
       const core = new THREE.Group(); core.position.y = .7; body.add(core);
       mesh(gSph(.2, 14, 10), M('#5a2a9a', { emissive: 0x7a3ae8, emissiveIntensity: 1.6, roughness: .3 }), 0, 0, 0, core).castShadow = false;
       glow(0xb07cff, 1.6, core, 0, .9); extra.core = core; h = 1; break; }
   }
-  root.scale.setScalar(sc * (ty === 'knight' || ty === 'king' ? 1 : 1));
+  root.scale.setScalar(sc);
+  if (d.tint) {
+    const tc = new THREE.Color(d.tint.c);
+    for (const m of mats) { m.color.lerp(tc, d.tint.a); if (m.emissive && m.emissiveIntensity >= 1) m.emissive.lerp(tc, d.tint.a); }
+    root.traverse(o => { if (o.isSprite) o.material.color.lerp(tc, d.tint.a); });
+  }
   return Object.assign({ g: root, body, legs, mats, kind: 'foe', yaw: 0, h: h * sc }, extra);
 }
 
@@ -3550,6 +4156,11 @@ function animHuman(m, e, dt, t) {
   m.head.rotation.y = Math.sin(t * .7 + (e.x || 0)) * .08;
 }
 function animFoe(m, f, dt, t) {
+  const cst = f.bs && f.bs.cast ? f.bs.cast.name : '';
+  if (m.wings) { const fl = Math.sin(t * (f.moving ? 5 : 2.2)) * (f.moving ? .45 : .2); m.wings[0].rotation.z = -(.3 + fl); m.wings[1].rotation.z = .3 + fl; }
+  if (m.neck) m.neck.rotation.x = Math.sin(t * 1.3) * .08 + (cst === 'Frost Breath' ? .35 : 0);
+  if (m.tail2) m.tail2.rotation.y = Math.sin(t * 1.8) * .35 + (cst === 'Tail Sweep' ? Math.sin(t * 20) * .6 : 0);
+  if (m.breath) { const br = cst === 'Frost Breath'; m.breath.material.opacity = br ? .9 : 0; m.breath.scale.setScalar(br ? 1.6 + Math.sin(t * 20) * .3 : 1); }
   const vx = f.x - (m.px ?? f.x), vz = f.y - (m.pz ?? f.y); m.px = f.x; m.pz = f.y;
   if (f.moving && Math.hypot(vx, vz) > .02) yawToward(m, vx, vz, dt, 8);
   else { const tg = f.aggro ? foeTarget(f) : null; if (tg) yawToward(m, tg.x - f.x, tg.y - f.y, dt, 6); }
@@ -3624,9 +4235,10 @@ function render(dt) {
   let lift = 0;
   if ((z.id === 'brightfield' && G.beacons.b1) || (z.id === 'murkfen' && G.beacons.b2)) lift = .18;
   if (z.id === 'keep' && G.beacons.b3) lift = .45;
+  if (z.id === 'frostspire' && G.beacons.b4) lift = .25;
   const ecl = G.eclipse ? -.25 : 0;
   R.scene.fog = R.scene.fog || new THREE.Fog(A.fog, A.near, A.far);
-  R.scene.fog.color.setHex(A.fog); R.scene.fog.near = A.near * (1 + lift); R.scene.fog.far = A.far * (1 + lift * .6) * (G.eclipse ? .75 : 1);
+  R.scene.fog.color.setHex(A.fog); R.scene.fog.near = A.near * (1 + lift); R.scene.fog.far = A.far * (1 + lift * .6) * (G.eclipse ? .75 : 1) * (G.blizzard ? .6 : 1); if (G.blizzard) R.scene.fog.near = A.near * .5;
   R.scene.background = R.scene.fog.color;
   R.hemi.color.setHex(A.sky); R.hemi.groundColor.setHex(A.gnd); R.hemi.intensity = A.hI * (1 + lift + ecl);
   R.moon.color.setHex(A.moon); R.moon.intensity = A.mI * (1 + lift + ecl);
@@ -3647,7 +4259,7 @@ function render(dt) {
   // zone dynamic bits
   const zi = z.g3;
   if (zi.water) zi.water.material.emissiveIntensity = .5 + Math.sin(t * 1.3) * .12;
-  for (const gte of zi.gates) { gte.visible = !G.gateOpen; if (gte.userData.rune) gte.userData.rune.material.opacity = .5 + Math.sin(t * 3) * .25; }
+  for (const gte of zi.gates) { gte.visible = !gateOpenFor(z.id); if (gte.userData.rune) gte.userData.rune.material.opacity = .5 + Math.sin(t * 3) * .25; }
   if (zi.banners) for (const c of zi.banners) c.rotation.y = Math.sin(t * 1.6 + c.position.x) * .15;
   const lightsList = [];
   for (const L of zi.lanterns) {
@@ -3671,9 +4283,26 @@ function render(dt) {
     if (on) { o.userData.inner.position.y = Math.sin(t * 3 + p.x) * .08; o.userData.inner.rotation.y += dt * 1.4; }
   }
   // units
-  for (const h of heroes()) { const m = regGet(h, () => makeHumanoid(h.key)); placeEnt(m, h); animHuman(m, h, dt, t); m.g.visible = true; }
+  for (const h of heroes()) {
+    const m = regGet(h, () => makeHumanoid(h.key)); placeEnt(m, h); animHuman(m, h, dt, t);
+    m.g.visible = !(h.key === 'handan' && h.iframes > 0 && Math.floor(t * 28) % 2);
+    if (h.key === 'orhun' && h.iframes > 0 && h.dash) { m.body.rotation.x = (1 - h.iframes / DODGE.orhun.ifr) * Math.PI * 2; m.body.position.y = .35; }
+  }
   const fox = P.fox;
-  if (!fox.dead && !P.handan.dead) { const m = regGet(fox, makeFox3D); placeEnt(m, fox); animFox(m, fox, dt, t); }
+  if (G.mounted) {
+    const d = ctrlHero(), mm = regGet('mount', () => { const m = makeFox3D(); m.g.scale.setScalar(3.1); return m; });
+    placeEnt(mm, d); animFox(mm, { x: d.x, y: d.y, moving: d.moving }, dt, t);
+    const bob = d.moving ? Math.abs(Math.sin(t * 9)) * .06 : 0;
+    for (const [h, zo, yo] of [[P.orhun, .28, .66], [P.handan, -.38, .7]]) {
+      const m = S3.ents.get(h); if (!m) continue;
+      m.g.position.set(d.x / TILE + Math.sin(mm.yaw) * zo, yo + bob, d.y / TILE + Math.cos(mm.yaw) * zo);
+      m.yaw = mm.yaw; m.g.rotation.y = mm.yaw; m.g.visible = true;
+      m.body.rotation.x = 0; m.hipL.rotation.x = m.hipR.rotation.x = -1.4; m.hipL.rotation.z = -.3; m.hipR.rotation.z = .3;
+      m.armL.rotation.x = -.5; m.armR.rotation.x = -.4;
+    }
+  } else for (const h of heroes()) { const m = S3.ents.get(h); if (m) { m.hipL.rotation.z = 0; m.hipR.rotation.z = 0; } }
+  if (!fox.dead && !P.handan.dead && !G.mounted) { const m = regGet(fox, makeFox3D); placeEnt(m, fox); animFox(m, fox, dt, t); }
+  if (zi.waystone) { const on = waystoneOpen(z.id); zi.waystone.runeM.emissiveIntensity = on ? 1.6 + Math.sin(t * 3) * .4 : 0; zi.waystone.gl.material.opacity = on ? .7 : 0; if (on) lightsList.push({ x: zi.waystone.x, y: 1.4, z: zi.waystone.z, col: 0x46ffb0, r: 5, i: 1 }); }
   for (const n of G.npcs) {
     const m = regGet(n, () => makeHumanoid(n.id)); placeEnt(m, n);
     const c = ctrlHero(); if (dist(n, c) < 4 * TILE) yawToward(m, c.x - n.x, c.y - n.y, dt, 4); else if (m.yaw === 0) { m.g.rotation.y = 0; }
@@ -3691,6 +4320,7 @@ function render(dt) {
   R.heroL.handan.intensity = hh.dead ? 0 : .95 + Math.sin(t * 3) * .08;
   // fx meshes
   drawFx3D(R, dt, t, lightsList);
+  updateSnow(R, z, dt, fx, fz);
   // point light pool
   lightsList.sort((a, b) => (b.pri ? 1 : 0) - (a.pri ? 1 : 0) || (Math.hypot(a.x - fx, a.z - fz) - Math.hypot(b.x - fx, b.z - fz)));
   R.pool.forEach((l, i) => { const s = lightsList[i]; if (s && Math.hypot(s.x - fx, s.z - fz) < 30) { l.position.set(s.x, s.y, s.z); l.color.setHex(s.col); l.distance = s.r; l.intensity = s.i; } else l.intensity = 0; });
@@ -3761,6 +4391,10 @@ function drawFx3D(R, dt, t, lightsList) {
       const m = fxMesh(f, () => { const rg = flat(new THREE.Mesh(new THREE.RingGeometry(.75, 1, 24, 1, 0, f.k === 'spin' ? Math.PI * 1.6 : Math.PI * .7), new THREE.MeshBasicMaterial({ color: f.big ? 0xffb08a : 0xf4f6ff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }))); const g = new THREE.Group(); g.add(rg); return { g, rg, mats: [rg.material] }; });
       const r = f.k === 'spin' ? f.r / TILE : (f.big ? .8 : .55);
       m.g.position.set(f.x / TILE, f.k === 'spin' ? .7 : 1.0, (f.y + (f.k === 'spin' ? 14 : 16)) / TILE); m.g.scale.set(r, 1, r); m.g.rotation.y = (f.a || 0) + u * 5; m.rg.material.opacity = 1 - u;
+    } else if (f.k === 'heart') {
+      const m = fxMesh(f, () => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTex(), transparent: true, depthWrite: false, depthTest: false })); const g = new THREE.Group(); g.add(sp); return { g, sp, mats: [sp.material] }; });
+      const uu = Math.max(0, u), s2 = .95 * (f.s || 1) * (1 + Math.min(1, Math.max(0, f.t) * 6) * .3);
+      m.g.visible = f.t >= 0; m.g.position.set(f.bx / TILE, f.h + uu * 1.1, f.by / TILE); m.sp.scale.set(s2, s2, 1); m.sp.material.opacity = 1 - uu * uu;
     } else if (f.k === 'vines' && f.e && !f.e.dead) {
       const m = fxMesh(f, () => { const g = new THREE.Group(); const mt = new THREE.MeshStandardMaterial({ color: 0x5a9a3a, roughness: .8 }); for (let k = 0; k < 6; k++) { const v = new THREE.Mesh(gCone(.05, .55, 4), mt); const a = k / 6 * Math.PI * 2; v.position.set(Math.cos(a) * .32, .2, Math.sin(a) * .32); v.rotation.z = Math.cos(a) * -.5; v.rotation.x = Math.sin(a) * .5; g.add(v); } return { g, mats: [mt] }; });
       m.g.position.set(f.e.x / TILE, 0, f.e.y / TILE); const s = Math.min(1, f.t * 5, (f.dur - f.t) * 2); m.g.scale.set(1, s, 1);
@@ -3809,7 +4443,7 @@ function drawOverlay(dt, t) {
     g.fillStyle = m.col; g.shadowColor = m.col; g.shadowBlur = 10; g.fillText(m.ch, s.x, s.y); g.shadowBlur = 0;
   }
   const nb = nearestBeacon();
-  if (nb && !G.beacons[nb.id] && G.bossDead[{ b1: 'gnarl', b2: 'witch', b3: 'king' }[nb.id]]) { const s = toScreen((nb.x + .5) * TILE, (nb.y + .5) * TILE, 3); textOutlined(g, 'Press E to relight the beacon', s.x, s.y, '#c9f5df', 14); }
+  if (nb && !G.beacons[nb.id] && G.bossDead[BEACON_BOSS[nb.id]]) { const s = toScreen((nb.x + .5) * TILE, (nb.y + .5) * TILE, 3); textOutlined(g, 'Press E to relight the beacon', s.x, s.y, '#c9f5df', 14); }
   const nn = nearestNpc();
   if (nn && !G.dialog) { const s = toScreen(nn.x, nn.y, -.1); textOutlined(g, 'E  Talk to ' + NPCS[nn.id].name, s.x, s.y + 16, '#f2e6c8', 12); }
   for (const b of G.barks) {
@@ -3887,6 +4521,38 @@ function drawTitleHeroes() {
     try { g.drawImage(renderModelImage(k, true), 0, 0, 192, 288); } catch (e) { console.error(e); }
   }
 }
+
+/* ---------- Snowfall ---------- */
+function updateSnow(R, z, dt, fx, fz) {
+  if (!R.snow) {
+    const N = 1100, g = new THREE.BufferGeometry(), pos = new Float32Array(N * 3), sp = new Float32Array(N);
+    for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - .5) * 34; pos[i * 3 + 1] = Math.random() * 11; pos[i * 3 + 2] = (Math.random() - .5) * 30; sp[i] = .6 + Math.random() * .9; }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const m = new THREE.PointsMaterial({ size: .11, color: 0xf2f8ff, map: R.glowTex, transparent: true, opacity: .9, depthWrite: false, sizeAttenuation: true });
+    R.snow = new THREE.Points(g, m); R.snow.frustumCulled = false; R.snow.userData = { sp, N, ox: fx, oz: fz }; R.scene.add(R.snow);
+  }
+  const S = R.snow; S.visible = !!z.snow; if (!z.snow) return;
+  const p = S.geometry.attributes.position.array, u = S.userData, bl = G.blizzard;
+  const fall = bl ? 3.2 : 1.1, wind = bl ? 3.5 : .5, n = bl ? u.N : Math.floor(u.N * .5), t = performance.now() / 1000;
+  const dx = fx - u.ox, dz = fz - u.oz; u.ox = fx; u.oz = fz;
+  for (let i = 0; i < n; i++) {
+    let x = p[i * 3] - dx + (wind + Math.sin(t + i) * .3) * dt, y = p[i * 3 + 1] - fall * u.sp[i] * dt, zz = p[i * 3 + 2] - dz;
+    if (y < 0) { y += 11; x = (Math.random() - .5) * 34; zz = (Math.random() - .5) * 30; }
+    if (x > 17) x -= 34; else if (x < -17) x += 34; if (zz > 15) zz -= 30; else if (zz < -15) zz += 30;
+    p[i * 3] = x; p[i * 3 + 1] = y; p[i * 3 + 2] = zz;
+  }
+  S.position.set(fx, 0, fz); S.geometry.setDrawRange(0, n); S.geometry.attributes.position.needsUpdate = true;
+  S.material.size = bl ? .14 : .11;
+}
+
+var _heartTex = null;
+function heartTex() {
+  if (_heartTex) return _heartTex;
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  g.shadowColor = '#ff6a9a'; g.shadowBlur = 10;
+  drawHeart(g, 32, 30, 20, '#ff6f9c');
+  _heartTex = new THREE.CanvasTexture(c); _heartTex.colorSpace = THREE.SRGBColorSpace; return _heartTex;
+}
 /* ===================== TOUCH / PHONE CONTROLS ===================== */
 (function () {
   const coarse = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || (navigator.maxTouchPoints > 0 && 'ontouchstart' in window);
@@ -3907,30 +4573,38 @@ function drawTitleHeroes() {
   .touch #bottom{left:0;right:0;transform:none;bottom:0;pointer-events:none}
   .touch #gaugeRow,.touch #menu,.touch #log,.touch #swapBtn,.touch #bCoop,.touch #bPlayers,.touch #title .keys{display:none!important}
   .touch #xpbar{position:fixed;left:0;right:0;bottom:0;width:auto;height:3px;border:0;border-radius:0;pointer-events:none}
-  .touch #bar{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,58px);gap:8px;padding:8px;background:rgba(15,19,27,.5);border-radius:14px;pointer-events:auto}
+  .touch #bar{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,58px);grid-template-rows:repeat(2,58px);gap:8px;padding:8px;background:rgba(15,19,27,.5);border-radius:14px;pointer-events:auto}
   .touch #bar > div:not(.slot){display:none}
   .touch #bar .slot,.touch #tUtil .slot{width:58px;height:58px;border-radius:50%;border:2px solid #000;box-shadow:0 2px 8px rgba(0,0,0,.5),inset 0 0 0 1px rgba(224,166,78,.25)}
   .touch #bar .slot .key,.touch #tUtil .slot .key{display:none}
   .touch #bar .slot .cost{right:50%;transform:translateX(50%);bottom:2px}
-  .touch #bar .slot[data-pos="0"]{grid-column:3;grid-row:2;box-shadow:0 0 0 2px rgba(224,166,78,.6),0 2px 10px rgba(0,0,0,.6)}
-  .touch #bar .slot[data-pos="1"]{grid-column:2;grid-row:2}
-  .touch #bar .slot[data-pos="2"]{grid-column:1;grid-row:2}
-  .touch #bar .slot[data-pos="3"]{grid-column:3;grid-row:1}
-  .touch #bar .slot[data-pos="4"]{grid-column:2;grid-row:1}
-  .touch #bar .slot[data-pos="5"]{grid-column:1;grid-row:1}
+  .touch #bar .slot[data-pos="0"]{grid-column:4;grid-row:2;box-shadow:0 0 0 2px rgba(224,166,78,.6),0 2px 10px rgba(0,0,0,.6)}
+  .touch #bar .slot[data-pos="1"]{grid-column:3;grid-row:2}
+  .touch #bar .slot[data-pos="2"]{grid-column:2;grid-row:2}
+  .touch #bar .slot[data-pos="3"]{grid-column:4;grid-row:1}
+  .touch #bar .slot[data-pos="4"]{grid-column:3;grid-row:1}
+  .touch #bar .slot[data-pos="5"]{grid-column:2;grid-row:1}
+  .touch #bar .slot[data-pos="dodge"]{grid-column:1;grid-row:2;box-shadow:0 0 0 2px rgba(201,245,223,.5),0 2px 8px rgba(0,0,0,.5)}
+  .touch #bar #tLantern{grid-column:1;grid-row:1;width:58px;height:58px}
+  .touch .btn kbd{display:none}
+  .touch .mmbtns .btn{padding:4px 6px}
   .touch .slot.press{transform:scale(.9);filter:brightness(1.3)}
   .touch .slot.locked::after{font-size:12px;border-radius:50%}
-  #tUtil{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 216px);bottom:max(12px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:auto}
+  #tUtil{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 282px);bottom:max(12px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:auto}
   #tUtil .slot{width:50px!important;height:50px!important}
   .tbtn{width:50px;height:50px;border-radius:50%;border:2px solid #000;background:radial-gradient(circle at 50% 35%,#2a3242,#141922);color:var(--parch);font:700 11px var(--body);letter-spacing:.04em;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.5),inset 0 0 0 1px rgba(224,166,78,.25);position:relative;overflow:hidden;padding:0;cursor:pointer}
   .tbtn:active{transform:scale(.9)}
+  .tbtn.on{box-shadow:0 0 12px #46c495,0 0 0 2px #7dffc8}
   .tbtn svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   #tLantern{color:#c9f5df}
   #tLantern i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,#2b7d5f,#46c495);opacity:.75;display:block}
   #tLantern svg{position:relative}
   #tLantern.full{box-shadow:0 0 16px #46c495,0 0 0 2px #c9f5df}
-  #tUse{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 8px);bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 150px);min-width:110px;height:44px;border-radius:22px;border:2px solid var(--brass);background:linear-gradient(180deg,#7a5420,#4e3412);color:#fff3da;font:800 14px var(--body);letter-spacing:.06em;text-transform:uppercase;pointer-events:auto;box-shadow:0 0 14px rgba(224,166,78,.45)}
+  #tUse{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 8px);bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 152px);min-width:110px;height:44px;border-radius:22px;border:2px solid var(--brass);background:linear-gradient(180deg,#7a5420,#4e3412);color:#fff3da;font:800 14px var(--body);letter-spacing:.06em;text-transform:uppercase;pointer-events:auto;box-shadow:0 0 14px rgba(224,166,78,.45)}
   #tUse:active{transform:scale(.94)}
+  #tDodge{position:fixed;right:calc(max(14px,env(safe-area-inset-right,0px)) + 8px);bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 150px);pointer-events:auto}
+  #tDodge .slot{width:54px!important;height:54px!important;border-radius:50%;border:2px solid #000;box-shadow:0 2px 8px rgba(0,0,0,.5),inset 0 0 0 1px rgba(201,245,223,.35)}
+  #tDodge .slot .key{display:none}
   #joyBase{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:2px solid rgba(236,226,201,.35);background:radial-gradient(circle,rgba(236,226,201,.08),rgba(236,226,201,.02));pointer-events:none;z-index:6}
   #joyKnob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(255,240,210,.55),rgba(224,166,78,.35));border:2px solid rgba(255,240,210,.6)}
   #joyHint{position:fixed;left:calc(max(16px,env(safe-area-inset-left,0px)) + 30px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 30px);width:96px;height:96px;border-radius:50%;border:2px dashed rgba(236,226,201,.22);display:grid;place-items:center;color:rgba(236,226,201,.4);font:700 10px var(--body);letter-spacing:.12em;text-transform:uppercase;pointer-events:none;text-align:center}
@@ -3975,6 +4649,7 @@ function drawTitleHeroes() {
     <button class="tbtn" id="tLantern" aria-label="Lanternburst"><i></i>${svg('<path d="M9 3h6M10 3v2M14 3v2M7 7h10l-1 11H8L7 7zM9 21h6"/><path d="M12 10c1.5 1.6 1.5 3.6 0 5c-1.5-1.4-1.5-3.4 0-5z"/>')}</button>`;
   hud.appendChild(util);
   const use = document.createElement('button'); use.id = 'tUse'; use.hidden = true; use.textContent = 'Talk'; hud.appendChild(use);
+  const dwrap = document.createElement('div'); dwrap.id = 'tDodge'; hud.appendChild(dwrap);
   const hint = document.createElement('div'); hint.id = 'joyHint'; hint.textContent = 'Move'; hud.appendChild(hint);
   const base = document.createElement('div'); base.id = 'joyBase'; base.hidden = true; base.innerHTML = '<div id="joyKnob"></div>'; document.body.appendChild(base);
   const knob = base.firstChild;
@@ -3983,7 +4658,7 @@ function drawTitleHeroes() {
   document.querySelector('.mmbtns').appendChild(more);
   $('bHelp').hidden = true;
   const pop = document.createElement('div'); pop.id = 'tMore'; pop.className = 'win'; pop.style.cssText = 'left:auto;transform:none;'; pop.hidden = true;
-  pop.innerHTML = `<button class="btn" id="mSound">Sound: on</button><button class="btn" id="mSave">Save journey</button><button class="btn" id="mHelp">How to play</button>${alt ? `<button class="btn" id="mGfx">${alt.label}</button>` : ''}`;
+  pop.innerHTML = `<button class="btn" id="mSound">Sound: on</button><button class="btn" id="mAuto">Auto-cast: ${G.autoCast ? 'on' : 'off'}</button><button class="btn" id="mSave">Save journey</button><button class="btn" id="mHelp">How to play</button>${alt ? `<button class="btn" id="mGfx">${alt.label}</button>` : ''}`;
   document.body.appendChild(pop);
 
   function audioResume() { try { if (SND.ctx && SND.ctx.state !== 'running') SND.ctx.resume(); } catch (e) { } }
@@ -3993,12 +4668,15 @@ function drawTitleHeroes() {
 
   const tap = (el, fn) => el.addEventListener('pointerdown', ev => { ev.preventDefault(); ev.stopPropagation(); SND.init(); fn(); });
   tap($('tSwap'), () => swapHero());
-  tap($('tTarget'), () => { cycleTarget(); if (G.target) G.autoAtk = true; sfx('ui'); });
+  tap($('tTarget'), () => { if (!G.inCombat) { mountToggle(); return; } cycleTarget(); if (G.target) G.autoAtk = true; sfx('ui'); });
+  const tgtSvg = $('tTarget').innerHTML, mountSvg = svg('<path d="M4 15c2-4 6-6 10-6l3-3 1 4c2 1 3 3 3 5"/><path d="M6 15v4M10 15v4M15 15v4M19 15v3"/><circle cx="16" cy="8" r=".5"/>');
+  let tgtMode = 'target';
   tap($('tLantern'), () => lanternburst());
   tap(use, () => interact());
   more.onclick = ev => { ev.stopPropagation(); pop.hidden = !pop.hidden; $('mSound').textContent = 'Sound: ' + (SND.on ? 'on' : 'off'); };
   $('mSound').onclick = () => { SND.init(); const on = SND.toggle(); $('mSound').textContent = 'Sound: ' + (on ? 'on' : 'off'); $('bSound').textContent = 'Sound: ' + (on ? 'on' : 'off'); };
   $('mSave').onclick = () => { saveGame(false); pop.hidden = true; };
+  $('mAuto').onclick = () => { setAutoCast(!G.autoCast); };
   $('mHelp').onclick = () => { pop.hidden = true; $('help').hidden = false; };
   if (alt) $('mGfx').onclick = switchGfx;
   document.addEventListener('pointerdown', ev => { if (!pop.hidden && !pop.contains(ev.target) && ev.target !== more) pop.hidden = true; });
@@ -4028,9 +4706,12 @@ function drawTitleHeroes() {
   buildActionBar = function () {
     _bab();
     const old = util.querySelector('.slot'); if (old) old.remove();
+    dwrap.innerHTML = '';
+    $('bar').insertBefore($('tLantern'), $('bar').firstChild);
     for (const s of slotEls) {
       const el = s.el; el.dataset.pos = s.pot ? 'pot' : String(s.i);
       if (s.pot) util.appendChild(el);
+
       let timer = null, tipped = false, pid = null;
       el.addEventListener('pointerdown', ev => {
         ev.preventDefault(); ev.stopPropagation(); SND.init();
@@ -4043,7 +4724,7 @@ function drawTitleHeroes() {
         clearTimeout(timer); el.classList.remove('press'); pid = null;
         if (tipped) { hideTip(); return; }
         if (cancel) return;
-        if (s.pot) drinkPotion(ctrlHero()); else useAbility(ctrlHero(), s.i);
+        if (s.pot) drinkPotion(ctrlHero()); else if (s.dodge) dodge(ctrlHero()); else useAbility(ctrlHero(), s.i);
       };
       el.addEventListener('pointerup', ev => end(ev, false));
       el.addEventListener('pointercancel', ev => end(ev, true));
@@ -4065,6 +4746,9 @@ function drawTitleHeroes() {
     }
     if (label !== lastUse) { lastUse = label; use.hidden = !label; use.textContent = label; }
     $('tSwap').style.opacity = otherHero().dead ? .35 : 1;
+    const mode = G.inCombat ? 'target' : 'mount';
+    if (mode !== tgtMode) { tgtMode = mode; $('tTarget').innerHTML = mode === 'mount' ? mountSvg : tgtSvg; $('tTarget').setAttribute('aria-label', mode === 'mount' ? 'Ride Lumen' : 'Next target'); }
+    $('tTarget').classList.toggle('on', G.mounted);
   };
 
   // one phone, one player
@@ -4091,7 +4775,10 @@ function drawTitleHeroes() {
     <tr><td>Move</td><td>Put your left thumb anywhere on the left half of the screen and slide.</td></tr>
     <tr><td>Target</td><td>Tap an enemy to target it. Orhun walks over and attacks. Tap open ground on the right half to walk there.</td></tr>
     <tr><td>Abilities</td><td>The six round buttons on the right. The corner one is your main attack. Hold any button to read what it does.</td></tr>
-    <tr><td>Side buttons</td><td>Swap hero · Next target · Lanternburst (when the jade fills) · Healing Draught.</td></tr>
+    <tr><td>Dodge</td><td>The button above your abilities. Orhun rolls and Handan steps through the jade in the direction you are moving. Attacks pass through you while dodging.</td></tr>
+    <tr><td>Side buttons</td><td>Swap hero · Next target in a fight, or Ride Lumen outside of fights · Lanternburst (when the jade fills) · Healing Draught.</td></tr>
+    <tr><td>Travel</td><td>The Travel button under the map takes you to any waystone you have woken. Relighting a zone's beacon wakes its waystone; Lanternhold's is always open.</td></tr>
+    <tr><td>Auto-cast</td><td>Turn it on in the ⋯ menu and abilities fire by themselves during fights. You still move and pick targets.</td></tr>
     <tr><td>Talk / Relight</td><td>A gold button appears when you stand near someone or a beacon. You can also tap people directly.</td></tr>
     <tr><td>Menus</td><td>Bags, Quests and ⋯ (sound, save, help) sit under the map. In bags, tap an item once to read it, tap again to equip or sell.</td></tr>
     <tr><td>Roles</td><td><b>Orhun</b> holds enemies with Sunder and Challenging Roar and hits hard. <b>Handan</b> casts from range, roots, and heals with Mending Light and Jade Ward. The hero you are not playing fights on their own.</td></tr>
@@ -4124,6 +4811,46 @@ function drawTitleHeroes() {
   const wake = async () => { try { if (navigator.wakeLock && !lock && document.visibilityState === 'visible') { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); } } catch (e) { lock = null; } };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && G.started) wake(); else if (document.visibilityState === 'hidden' && G.started) saveGame(true); });
   window.addEventListener('pointerdown', () => { if (G.started) wake(); }, { passive: true });
+})();
+/* ===================== GAMEPADS (1–2 controllers) ===================== */
+(function () {
+  const prev = [[], []], DZ = .22;
+  const down = (pad, i) => { const b = pad.buttons[i]; return !!(b && (b.pressed || b.value > .5)); };
+  const heroFor = pi => G.coop ? (pi === 0 ? P.orhun : P.handan) : ctrlHero();
+  function act(pi, edge) {
+    if (!G.started) { if (edge(0) || edge(9)) { SND.init(); const c = $('bContinue'); (c.hidden ? $('bNew') : c).click(); } return; }
+    if (!$('talent').hidden) return;
+    if (G.dialog) {
+      const l = G.dialog.lines[G.dialog.i];
+      if (edge(0) || edge(9)) { if (l.actions) { const b = document.querySelector('#dlgActs .btn.primary') || document.querySelector('#dlgActs .btn'); if (b) b.click(); } else advanceDialog(); }
+      else if (edge(1) && l.actions) { const bs = document.querySelectorAll('#dlgActs .btn'); if (bs.length) bs[bs.length - 1].click(); }
+      return;
+    }
+    if (!$('ending').hidden) { if (edge(0) && $('endStay')) $('endStay').click(); return; }
+    if (edge(1) && anyWindowOpen()) { closeWindows(); return; }
+    const h = heroFor(pi);
+    for (let i = 0; i < 6; i++) if (edge(i)) { SND.init(); useAbility(h, i); }
+    if (edge(6)) drinkPotion(h);
+    if (edge(7)) dodge(h, PADV[pi][0], PADV[pi][1]);
+    if (edge(8) && !G.coop) swapHero();
+    if (edge(9) || edge(12)) interact(h);
+    if (edge(13)) lanternburst(h);
+    if (edge(14) || edge(15)) { cycleTarget(h); if (h === ctrlHero() && G.target) G.autoAtk = true; }
+  }
+  function poll() {
+    PADV[0] = [0, 0]; PADV[1] = [0, 0];
+    if (!navigator.getGamepads) return;
+    const list = Array.from(navigator.getGamepads()).filter(p => p && p.connected).slice(0, 2);
+    list.forEach((pad, pi) => {
+      const ax = pad.axes[0] || 0, ay = pad.axes[1] || 0;
+      PADV[pi] = [Math.abs(ax) > DZ ? ax : 0, Math.abs(ay) > DZ ? ay : 0];
+      const now = pad.buttons.map((b, i) => down(pad, i)), was = prev[pi]; prev[pi] = now;
+      act(pi, i => now[i] && !was[i]);
+    });
+  }
+  const _upd = update;
+  update = function (dt) { try { poll(); } catch (e) { console.error(e); } _upd(dt); };
+  window.addEventListener('gamepadconnected', e => { try { toast(`Controller ${e.gamepad.index + 1} connected`); } catch (x) { } });
 })();
 (function () {
   const hot = window.claude && window.claude.hot;

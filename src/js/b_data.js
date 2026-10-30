@@ -1,6 +1,7 @@
 /* ===================== DATA ===================== */
-const XP_NEED = [0, 100, 150, 210, 280, 360, 450, 560, 680, 820, Infinity];
-const MAX_LVL = 10;
+const XP_NEED = [0, 100, 150, 210, 280, 360, 450, 560, 680, 820, 1000, 1180, 1380, 1600, 1850, Infinity];
+const MAX_LVL = 15;
+const BEACON_BOSS = { b1: 'gnarl', b2: 'witch', b3: 'king', b4: 'wyrm' };
 const RARITY = ['Common', 'Uncommon', 'Rare', 'Epic'];
 const RCOL = ['#d8d8d8', '#5fdc6c', '#5aa6ff', '#c27cff'];
 
@@ -22,13 +23,14 @@ const ABIL = {
   orhun: [
     { id: 'sunder', name: 'Sunder', lvl: 1, cost: 0, gain: 15, cd: 3, range: 1.9, tgt: 'foe', icon: { bg: '#6b2a20', fg: '#f0d6b0', s: 'sword' },
       desc: c => `A heavy strike for <b>${Math.round(c.atk * 1.5)}</b> damage. Generates 15 rage and a lot of threat.`,
-      use(c, t) { swing(c, t); dealDamage(c, t, c.atk * 1.5, { threat: 3.2, label: 'Sunder' }); return true; } },
+      use(c, t) { swing(c, t); dealDamage(c, t, c.atk * 1.5, { threat: 3.2, label: 'Sunder' }); if (c.tal('stormblade')) { const o = foesNear(t, 2.5 * TILE).find(f => f !== t); if (o) { G.fx.push({ k: 'slash', x: o.x, y: o.y - 16, t: 0, dur: .2, a: 1 }); dealDamage(c, o, c.atk * .9, { threat: 2.4, label: 'Storm' }); } } return true; } },
     { id: 'roar', name: 'Challenging Roar', lvl: 1, cost: 10, cd: 12, range: 0, tgt: 'self', icon: { bg: '#5a3a14', fg: '#ffd27a', s: 'roar' },
       desc: c => `Taunt every enemy within 5 yards for 4s and weaken them (−15% damage) for 8s. Pulls aggro off Handan.`,
       use(c) {
         sfx('roar'); ring(c.x, c.y, 160, '#ffcf6a');
         let n = 0;
         for (const f of foesNear(c, 5 * TILE)) { taunt(f, c, 4); addBuff(f, { id: 'daunt', name: 'Daunted', dur: 8, mods: { dmgDone: 0.85 }, col: '#ffcf6a', debuff: true }); n++; }
+        if (c.tal('warcry')) for (const h of heroes()) if (!h.dead) { addBuff(h, { id: 'warcry', name: 'War Cry', dur: 8, mods: { dmgDone: 1.15 }, col: '#ffcf6a' }); sparkle(h, '#ffcf6a'); }
         if (!n) floatText(c.x, c.y - 30, 'No enemies near', '#bbb');
         return true;
       } },
@@ -36,10 +38,10 @@ const ABIL = {
       desc: c => `Spin and hit every enemy within 2 yards for <b>${Math.round(c.atk * 1.15 * (c.tal('cyclone') ? 1.5 : 1))}</b> damage. Good threat on packs.`,
       use(c) {
         sfx('whirl'); spinFx(c);
-        for (const f of foesNear(c, 2.3 * TILE)) dealDamage(c, f, c.atk * 1.15 * (c.tal('cyclone') ? 1.5 : 1), { threat: 2.2, label: 'Whirl' });
+        for (let k = 0; k < (c.tal('bladestorm') ? 2 : 1); k++) for (const f of foesNear(c, 2.3 * TILE)) dealDamage(c, f, c.atk * 1.15 * (c.tal('cyclone') ? 1.5 : 1), { threat: 2.2, label: 'Whirl' });
         return true;
       } },
-    { id: 'ironhide', name: 'Ironhide Parry', lvl: 4, cost: 15, cd: 20, range: 0, tgt: 'self', icon: { bg: '#2c3a4a', fg: '#c9d8ea', s: 'shield' },
+    { id: 'ironhide', name: 'Ironhide Parry', lvl: 4, cost: 15, cd: 20, range: 0, tgt: 'self', cdMod: c => c.tal('unbroken') ? -6 : 0, icon: { bg: '#2c3a4a', fg: '#c9d8ea', s: 'shield' },
       desc: c => `For 6s take ${c.tal('bulwark') ? 75 : 50}% less damage and riposte each melee hit for <b>${Math.round(c.atk * 0.6)}</b>.`,
       use(c) { sfx('shield'); addBuff(c, { id: 'ironhide', name: 'Ironhide', dur: 6, mods: { dmgTaken: c.tal('bulwark') ? 0.25 : 0.5 }, riposte: true, col: '#9fc3ee' }); ring(c.x, c.y, 40, '#9fc3ee'); return true; } },
     { id: 'exec', name: "Executioner's Edge", lvl: 6, cost: 40, cd: 10, range: 1.9, tgt: 'foe', icon: { bg: '#4a1010', fg: '#ff8a6a', s: 'axe' },
@@ -57,11 +59,11 @@ const ABIL = {
   handan: [
     { id: 'bolt', name: 'Jade Bolt', lvl: 1, cost: 6, cd: 0, range: 8, tgt: 'foe', icon: { bg: '#134a3a', fg: '#9ff5d0', s: 'bolt' },
       desc: c => `Hurl a bolt of jade fire for <b>${Math.round(c.atk * 1.25 * (c.tal('sharpjade') ? 1.15 : 1))}</b> damage.`,
-      use(c, t) { sfx('cast'); shoot(c, t, '#7dffc8', 420, () => dealDamage(c, t, c.atk * 1.25 * (c.tal('sharpjade') ? 1.15 : 1), { threat: 1, label: 'Bolt' }), 6); return true; } },
+      use(c, t) { const m = c.atk * 1.25 * (c.tal('sharpjade') ? 1.15 : 1); sfx('cast'); shoot(c, t, '#7dffc8', 420, () => dealDamage(c, t, m, { threat: 1, label: 'Bolt' }), 6); if (c.tal('twinbolt')) { const o = G.foes.filter(f => f !== t && !f.dead && !f.evade && dist(f, t) < 5 * TILE).sort((a, b) => dist(a, t) - dist(b, t))[0]; if (o) shoot(c, o, '#c9f5df', 400, () => dealDamage(c, o, m * .6, { threat: 1 }), 4); } return true; } },
     { id: 'thorn', name: 'Thornbind', lvl: 1, cost: 14, cd: 10, range: 8, tgt: 'foe', icon: { bg: '#24401c', fg: '#a8e07a', s: 'root' },
       desc: c => `Roots the enemy in place for 4s and deals <b>${Math.round(c.atk * 1.0)}</b> damage over the duration.`,
       use(c, t) { sfx('cast'); addBuff(t, { id: 'root', name: 'Thornbind', dur: 4, mods: { root: true }, dot: c.atk * 0.25, src: c, col: '#a8e07a', debuff: true }); vines(t); return true; } },
-    { id: 'mend', name: 'Mending Light', lvl: 2, cost: 22, cd: 5, range: 9, tgt: 'ally', icon: { bg: '#4a4214', fg: '#fff2b0', s: 'heal' },
+    { id: 'mend', name: 'Mending Light', lvl: 2, cost: 22, costFn: c => c.tal('wellspring') ? 13 : 22, cd: 5, range: 9, tgt: 'ally', icon: { bg: '#4a4214', fg: '#fff2b0', s: 'heal' },
       desc: c => `Heal an ally for <b>${Math.round(c.atk * 2.2)}</b> + 12% of their max health. Targets the most wounded hero if you have no friendly target.${c.tal('bloom') ? ' The other hero is healed for half.' : ''}`,
       use(c, t) {
         sfx('heal');
@@ -74,7 +76,7 @@ const ABIL = {
       use(c, t) { sfx('cast'); addBuff(t, { id: 'wither', name: 'Wither Hex', dur: 8, mods: { dmgDone: 0.8 }, dot: c.atk * 0.5 * (c.tal('rot') ? 1.5 : 1), src: c, col: '#c98aff', debuff: true }); sparkle(t, '#c98aff'); return true; } },
     { id: 'ward', name: 'Jade Ward', lvl: 6, cost: 25, cd: 15, range: 9, tgt: 'ally', icon: { bg: '#0f4a40', fg: '#8affe0', s: 'ward' },
       desc: c => `Shield an ally, absorbing <b>${Math.round((c.atk * 3 + 40) * (c.tal('thickward') ? 1.5 : 1))}</b> damage for 10s. Defaults to Orhun.`,
-      use(c, t) { sfx('shield'); addBuff(t, { id: 'ward', name: 'Jade Ward', dur: 10, absorb: (c.atk * 3 + 40) * (c.tal('thickward') ? 1.5 : 1), col: '#8affe0' }); ring(t.x, t.y, 30, '#8affe0'); return true; } },
+      use(c, t) { sfx('shield'); addBuff(t, { id: 'ward', name: 'Jade Ward', dur: 10, absorb: (c.atk * 3 + 40) * (c.tal('thickward') ? 1.5 : 1), col: '#8affe0', bloom: c.tal('wardburst') ? c : null }); ring(t.x, t.y, 30, '#8affe0'); return true; } },
     { id: 'fire', name: 'Lanternfire', lvl: 8, cost: 38, cd: 12, range: 8, tgt: 'foe', icon: { bg: '#5a2a08', fg: '#ffc070', s: 'fire' },
       desc: c => `Call down lantern flame on the target, burning all enemies within ${c.tal('wildfire') ? 3.5 : 2.5} yards for <b>${Math.round(c.atk * 2.2)}</b> plus a short burn.`,
       use(c, t) {
@@ -94,6 +96,12 @@ const TALENTS = {
        handan: [['foxbond', 'Fox Bond', 'Lumen deals double damage and has 50% more health.'], ['thickward', 'Thicker Ward', 'Jade Ward absorbs 50% more.']] },
   9: { orhun: [['laststand', 'Last Stand', 'Below 35% health, take 25% less damage.'], ['headsman', 'Headsman', "Executioner's Edge cooldown reduced by 4s."]],
        handan: [['lanternsoul', 'Lantern Soul', 'The Lantern gauge fills 50% faster.'], ['wildfire', 'Wildfire', 'Lanternfire radius increased to 3.5 yards.']] },
+  11: { orhun: [['stormblade', 'Stormblade', 'Sunder also strikes a second nearby enemy for 60% damage.'], ['unbroken', 'Unbroken', 'Ironhide Parry cooldown reduced by 6s.']],
+        handan: [['twinbolt', 'Twin Bolt', 'Jade Bolt fires a second bolt at another nearby enemy for 60% damage.'], ['wellspring', 'Wellspring', 'Mending Light costs 40% less mana.']] },
+  13: { orhun: [['warcry', 'War Cry', 'Challenging Roar also gives both heroes 15% more damage for 8s.'], ['secondwind', 'Second Wind', 'Healing Draughts also give Orhun 30 rage and 20% damage reduction for 6s.']],
+        handan: [['wardburst', 'Ward Bloom', 'When Jade Ward breaks or ends, it heals its target for 15% of their max health.'], ['lumenfury', 'Lumen\'s Fury', 'Lumen\'s bites chill enemies (30% slower) and heal Handan for 2% of her max health.']] },
+  15: { orhun: [['champion', 'Lantern Champion', '10% more health and attack.'], ['bladestorm', 'Bladestorm', 'Whirling Blades strikes twice.']],
+        handan: [['lanternheart', 'Lanternheart', '12% more spell power and 20% more mana.'], ['phoenix', 'Phoenix Thread', 'Once per fight, when Orhun would fall he is restored to 30% health.']] },
 };
 
 const FOES = {
@@ -112,6 +120,12 @@ const FOES = {
   archer:  { name: 'Shade Archer', lvl: 9, hp: 220, atk: 27, def: 6, spd: 80, range: 210, rate: 2.1, xp: 100, ranged: true, proj: '#c9a0ff', draw: 'archer', r: 11, gold: [6, 14] },
   wraith:  { name: 'Lantern Wraith', lvl: 9, hp: 250, atk: 26, def: 5, spd: 104, range: 30, rate: 1.5, xp: 100, drain: true, draw: 'wraith', r: 12, gold: [6, 14] },
   king:    { name: 'The Hollow King', lvl: 11, hp: 11500, atk: 50, def: 14, spd: 80, range: 48, rate: 2.1, xp: 2000, boss: 'king', draw: 'king', scale: 1.2, r: 26, gold: [200, 300] },
+  frostwolf: { name: 'Rimefang Wolf', lvl: 11, hp: 430, atk: 34, def: 10, spd: 104, range: 30, rate: 1.4, xp: 140, draw: 'wolf', scale: 1.1, r: 13, gold: [8, 16], tint: { c: '#dceeff', a: .72 } },
+  frostcaller: { name: 'Hollow Frostcaller', lvl: 12, hp: 380, atk: 36, def: 8, spd: 70, range: 210, rate: 2.2, xp: 160, ranged: true, proj: '#9fdcff', chill: true, draw: 'witch', r: 12, light: '#9fdcff', gold: [9, 18], tint: { c: '#9fc8ff', a: .55 } },
+  rimewraith: { name: 'Rime Wraith', lvl: 12, hp: 420, atk: 35, def: 7, spd: 110, range: 30, rate: 1.5, xp: 160, drain: true, chill: true, draw: 'wraith', r: 12, light: '#bfe6ff', gold: [9, 18], tint: { c: '#cfeaff', a: .6 } },
+  golem:   { name: 'Rime Colossus', lvl: 13, hp: 1900, atk: 52, def: 16, spd: 58, range: 44, rate: 2.4, xp: 520, elite: true, draw: 'golem', scale: 1.35, r: 22, light: '#7ec8ff', gold: [25, 40] },
+  rimeling:{ name: 'Rimeling', lvl: 13, hp: 260, atk: 24, def: 6, spd: 96, range: 28, rate: 1.4, xp: 12, draw: 'golem', scale: .6, r: 10 },
+  wyrm:    { name: 'Vyrmhal, the Cold Crown', lvl: 16, hp: 21500, atk: 68, def: 16, spd: 78, range: 58, rate: 2.2, xp: 3000, boss: 'wyrm', draw: 'wyrm', scale: 1.3, r: 34, light: '#9fdcff', gold: [300, 420] },
   orb:     { name: 'Shadow Orb', lvl: 10, hp: 110, atk: 0, def: 0, spd: 28, range: 0, rate: 99, xp: 0, draw: 'orb', r: 11, orb: true, light: '#b07cff' },
 };
 
@@ -122,6 +136,7 @@ const NPCS = {
   dorrak: { name: 'Dorrak', title: 'Smith & Trader', look: { robe: '#6a4a2a', hair: '#2a1d14', skin: '#c99872', beard: true, apron: true }, vendor: true },
   taner: { name: 'Scout Brannoc', title: 'Ember Road Watch', look: { robe: '#3a4a5a', hair: '#3a2a1a', skin: '#d8a882', hood: '#2a3640' } },
   ayla: { name: 'Liora', title: 'Spirit of the First Lantern', look: { robe: '#8ad8c0', hair: '#e8fff6', skin: '#cff5ea', ghost: true } },
+  kael: { name: 'Warden Kael', title: 'Keeper of the Pass', look: { robe: '#4a3a5a', hair: '#cfd4dc', skin: '#d9b08c', beard: true, hood: '#3a4a62' } },
 };
 
 const QUESTS = [
@@ -156,7 +171,27 @@ const QUESTS = [
     obj: [{ t: 'collect', item: 'shard', n: 3, label: 'Lantern shards found' }], xp: 650, gold: 60, item: 2, done: 'Your pendant sings with them. The throne gate is open now.' },
   { id: 'q10', name: 'The Hollow King', giver: 'ayla', pre: ['q8', 'q9'], zone: 'Hollow Keep',
     text: 'He was the lantern\'s guardian once. Now he is its hunger. End him, and relight the First Lantern on the throne dais.',
-    obj: [{ t: 'boss', e: 'king', n: 1, label: 'The Hollow King defeated' }, { t: 'beacon', id: 'b3', n: 1, label: 'The First Lantern relit' }], xp: 1200, gold: 200, item: 3, done: 'end' },
+    obj: [{ t: 'boss', e: 'king', n: 1, label: 'The Hollow King defeated' }, { t: 'beacon', id: 'b3', n: 1, label: 'The First Lantern relit' }], xp: 1200, gold: 200, item: 3, done: 'end', final: true },
+  // ---- Chapter II: Frostspire ----
+  { id: 'q11', name: 'The North Road', giver: 'maren', turnin: 'kael', pre: ['q10'], zone: 'Frostspire Pass', ch: 2,
+    text: 'Frost on the north road, in autumn. The wells froze overnight. Liora says the King was only a vessel: the shadow in his crown fled north to Frostspire, where the First Lantern was forged. Go to the pass and find Warden Kael.',
+    obj: [{ t: 'visit', zone: 'frostspire', n: 1, label: 'Reach Frostspire Pass' }], xp: 400, gold: 30, potions: 3,
+    done: 'Maren sent you? Then the lowlands are finally listening. Welcome to Frostspire. Stay near the fire when you can, and keep your blades dry.' },
+  { id: 'q12', name: 'Teeth of the Pass', giver: 'kael', pre: ['q11'], zone: 'Frostspire Pass', ch: 2,
+    text: 'The wolves up here were grey once. Now they run white and hungry, and they hunt anything warm. Thin the packs on the lower slopes.',
+    obj: [{ t: 'kill', e: ['frostwolf'], n: 8, label: 'Rimefang Wolves slain' }], xp: 900, gold: 60, done: 'Good. The supply sledges can move again.' },
+  { id: 'q13', name: 'Embers in the Ice', giver: 'kael', pre: ['q11'], zone: 'Frostspire Pass', ch: 2,
+    text: 'When the forge went cold, its embers scattered and froze. You will see them glowing under the snow. Bring me five and I can keep this camp alive.',
+    obj: [{ t: 'collect', item: 'ember', n: 5, label: 'Frozen embers gathered' }], xp: 900, gold: 50, potions: 4, done: 'Feel that? Warm. First warm thing up here in a week.' },
+  { id: 'q14', name: 'The Frozen Choir', giver: 'kael', pre: ['q12'], zone: 'Frostspire Pass', ch: 2,
+    text: 'Hollow Frostcallers chant on the ridge, and Rime Wraiths follow the song. Every verse makes the mountain colder. Silence six of them.',
+    obj: [{ t: 'kill', e: ['frostcaller', 'rimewraith'], n: 6, label: 'Choir silenced' }], xp: 1100, gold: 70, item: 2, done: 'Quiet at last. I had forgotten what the wind sounds like.' },
+  { id: 'q15', name: 'Walls of Ice', giver: 'kael', pre: ['q13'], zone: 'Frostspire Pass', ch: 2,
+    text: 'Two Rime Colossi stand guard where the forge road climbs. The ice gate behind them answers only to the old forge-flame, and your pendant carries some of it. Break the guardians.',
+    obj: [{ t: 'kill', e: ['golem'], n: 2, label: 'Rime Colossi shattered' }], xp: 1200, gold: 80, item: 2, done: 'The gate is melting. The forge road is yours.' },
+  { id: 'q16', name: 'The Cold Crown', giver: 'kael', pre: ['q14', 'q15'], zone: 'Frostspire Pass', ch: 2,
+    text: 'The shadow from the crown found a body worth having: Vyrmhal, the old wyrm that slept under the forge. Kill it, and relight the Forge of the First Flame. Then Velmara keeps its light for good.',
+    obj: [{ t: 'boss', e: 'wyrm', n: 1, label: 'Vyrmhal slain' }, { t: 'beacon', id: 'b4', n: 1, label: 'The Forge of the First Flame relit' }], xp: 2500, gold: 400, item: 3, done: 'end', final: true },
 ];
 
 /* ---------- Dialogue ---------- */
@@ -166,6 +201,7 @@ const NPC_TALK = {
   dorrak: ['Steel or potions, I have both. Coin first.', 'Bring me what you find out there. I buy anything that is not cursed. Mostly.'],
   taner: ['Stay on the dry paths. The water here has teeth.', 'My scouts were good people. Every one of them.'],
   ayla: ['I kept the light for two hundred years. I can keep it a little longer.', 'The pendant chose her, you know. It does not choose lightly.'],
+  kael: ['Keep moving up here. Standing still is how the cold gets you.', 'Twenty years on this pass. Never seen the forge-smoke stop. Until now.', 'If you hear singing on the ridge, do not follow it.'],
 };
 
 const BANTER = {
@@ -192,6 +228,18 @@ const BANTER = {
   gnarl: [['orhun', 'That is not a boar. That is a hill with tusks.'], ['handan', 'Then be a taller hill. I\'ll handle the healing.']],
   witch: [['witch', 'Two little candles, wading into my fen. I will drink your light slowly.'], ['handan', 'Orhun, keep her eyes on you. I\'ll deal with the puddles.']],
   king: [['king', 'The lantern-bearer returns. Give me the shard, child, and I will make the dark painless.'], ['orhun', 'She said no. I\'m saying it louder.'], ['handan', 'When the pendant wakes, I\'ll need everything you have left. Stay close.']],
+  'Frostspire Pass': [
+    ['handan', 'My breath is freezing. And the pendant... it\'s cold, Orhun. It\'s never been cold.'],
+    ['orhun', 'Then we find the forge and warm it up again. Stay close to me.'],
+    ['handan', 'Closer than that and you\'ll have to carry me.'],
+    ['orhun', 'Wouldn\'t be the first time.'],
+  ],
+  ch2: [
+    ['handan', 'Orhun. The pendant is cold again. The light didn\'t stay.'],
+    ['orhun', 'Then it isn\'t over. Let\'s hear what Elder Maren knows.'],
+  ],
+  wyrm: [['wyrm', 'Little flames. The crown told me of you. It said you would be... smaller.'], ['orhun', 'Funny. The King said something like that too.'], ['handan', 'Watch the breath! Get out of the blue when it glows!']],
+  b4: [['handan', 'The forge is singing. I can hear it in the pendant.'], ['orhun', 'Every lantern in Velmara is going to feel that.']],
   b1: [['handan', 'It\'s warm. The flame knows the pendant.'], ['orhun', 'One down. Look at that light.']],
   b2: [['orhun', 'Two beacons. I can see Lanternhold\'s glow from here.'], ['handan', 'The Keep is next. I can feel it pulling.']],
   levelup: [['orhun', 'Getting stronger. Feels good.'], ['handan', 'I learned something new. Remind me to show you.'], ['orhun', 'Was that a level? That was a level.'], ['handan', 'Lumen\'s getting cocky. I blame you.']],
@@ -203,5 +251,5 @@ const ITEM_NAMES = {
   orhun: { weapon: ['Longsword', 'Sabre', 'Broadblade', 'Duelist\'s Blade'], armor: ['Brigandine', 'Mail Coat', 'Leather Jerkin', 'Scale Hauberk'] },
   handan: { weapon: ['Staff', 'Rod', 'Willow Stave', 'Lantern Staff'], armor: ['Robe', 'Mantle', 'Spellweave Coat', 'Night Robe'] },
   any: { trinket: ['Charm', 'Band', 'Amulet', 'Lantern Token', 'Signet'] },
-  suf: [' of the Fen', ' of Embers', ' of Brightfield', ' of the Keep', ' of Velmara', ' of the Ember Road'],
+  suf: [' of the Fen', ' of Embers', ' of Brightfield', ' of the Keep', ' of Velmara', ' of the Ember Road', ' of Frostspire', ' of the Cold Forge'],
 };
