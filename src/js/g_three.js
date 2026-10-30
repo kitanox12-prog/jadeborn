@@ -944,6 +944,7 @@ function render(dt) {
     if (NPCS[n.id].look.ghost) lightsList.push({ x: n.x / TILE, y: 1.4, z: n.y / TILE, col: 0x8ad8c0, r: 6, i: 1 });
   }
   for (const f of G.foes) {
+    if (f.svHorde) continue;
     const m = regGet(f, () => makeFoe3D(f)); placeEnt(m, f); animFoe(m, f, dt, t);
     if (f.def.light && !f.dead) lightsList.push({ x: f.x / TILE, y: 1.2, z: f.y / TILE, col: new THREE.Color(f.def.light).getHex(), r: f.def.boss ? 8 : 4.5, i: f.def.boss ? 1.6 : 1 });
   }
@@ -958,6 +959,7 @@ function render(dt) {
   // point light pool
   lightsList.sort((a, b) => (b.pri ? 1 : 0) - (a.pri ? 1 : 0) || (Math.hypot(a.x - fx, a.z - fz) - Math.hypot(b.x - fx, b.z - fz)));
   R.pool.forEach((l, i) => { const s = lightsList[i]; if (s && Math.hypot(s.x - fx, s.z - fz) < 30) { l.position.set(s.x, s.y, s.z); l.color.setHex(s.col); l.distance = s.r; l.intensity = s.i; } else l.intensity = 0; });
+  if (G.mode === 'survivor' || (typeof SV3 !== 'undefined' && SV3.root)) svRender3D(R, dt, t);
   regSweep();
   R.renderer.render(R.scene, R.camera);
   drawOverlay(dt, t);
@@ -1062,7 +1064,7 @@ function drawOverlay(dt, t) {
   if (!G.started) { const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .3, W / 2, H / 2, Math.max(W, H) * .75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.6)'); g.fillStyle = vg; g.fillRect(0, 0, W, H); return; }
   const c = ctrlHero();
   for (const f of G.foes) {
-    if (f.dead || f.def.boss || !(f.aggro || f === G.target || f === P.handan.target)) continue;
+    if (f.dead || f.def.boss || f.svHorde || !(f.aggro || f === G.target || f === P.handan.target)) continue;
     const hh = unitHeight(f), s = toScreen(f.x, f.y, hh + .35); if (!s.vis) continue;
     const w = f.def.elite ? 50 : 38;
     g.fillStyle = 'rgba(0,0,0,.8)'; g.fillRect(s.x - w / 2 - 1, s.y - 1, w + 2, 6);

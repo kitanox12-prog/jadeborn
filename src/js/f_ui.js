@@ -57,6 +57,7 @@ function render(dt) {
   if (G.coop && t2 && !t2.dead && t2.team === 'foe') { const rr = (t2.r || 10) + 10; g.strokeStyle = '#46c495'; g.lineWidth = 2; g.setLineDash([3, 5]); g.lineDashOffset = t * 20; g.beginPath(); g.ellipse(t2.x, t2.y + 1, rr, rr * .45, 0, 0, 7); g.stroke(); g.setLineDash([]); }
   if (G.moveTo && !G.moveTo.npc && !G.moveTo.foe) { g.strokeStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(G.moveTo.x, G.moveTo.y, 8, 3.5, 0, 0, 7); g.stroke(); }
 
+  if (G.mode === 'survivor') svRender2D(g, t, 0);
   // drawables
   const ds = [];
   for (const b of z.beacons) ds.push({ y: (b.y + .5) * TILE + 8, f: () => drawBeacon(g, b, t) });
@@ -97,7 +98,7 @@ function render(dt) {
 
   // bars above units
   for (const f of G.foes) {
-    if (f.dead || !inView(f.x, f.y) || f.def.boss) continue;
+    if (f.dead || !inView(f.x, f.y) || f.def.boss || f.svHorde) continue;
     if (!(f.aggro || f === G.target)) continue;
     const top = f.y - 34 * (f.def.scale || 1) - 8, w = f.def.elite ? 44 : 32;
     g.fillStyle = '#000'; g.fillRect(f.x - w / 2 - 1, top - 1, w + 2, 6);
@@ -109,6 +110,7 @@ function render(dt) {
 
   // lighting
   renderLights(g, z, cx, cy, t);
+  if (G.mode === 'survivor') svRender2D(g, t, 1);
   if (G.coop) for (const hh of heroes()) if (!hh.dead) textOutlined(g, hh.key === 'orhun' ? 'P1' : 'P2', hh.x, hh.y - (G.inCombat ? 66 : 56), hh.key === 'orhun' ? '#e0a64e' : '#46c495', 11);
 
   // NPC quest markers (drawn above darkness)
