@@ -3,7 +3,7 @@
 set -e
 cd "$(dirname "$0")"
 JS=src/js
-CORE="$JS/a_core.js $JS/b_data.js $JS/c_world.js $JS/d_gfx.js $JS/e_game.js $JS/e2_qol.js $JS/e3_progress.js $JS/f_ui.js"
+CORE="$JS/a_core.js $JS/b_data.js $JS/c_world.js $JS/d_gfx.js $JS/e_game.js $JS/e2_qol.js $JS/e3_progress.js $JS/f_ui.js $JS/e4_acts.js"
 cat $CORE $JS/s_survivor.js $JS/h_touch.js $JS/i_pad.js $JS/z_boot.js > /tmp/jb_pixel.js
 cat $CORE $JS/g_three.js $JS/s_survivor.js $JS/h_touch.js $JS/i_pad.js $JS/z_boot.js > /tmp/jb_3d.js
 node --check /tmp/jb_pixel.js && node --check /tmp/jb_3d.js

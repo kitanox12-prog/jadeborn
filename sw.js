@@ -1,5 +1,5 @@
 /* Jadeborn offline cache */
-const CACHE = 'jadeborn-20261030104336';
+const CACHE = 'jadeborn-20261030150930';
 const CORE = ['./', './index.html', './pixel.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));

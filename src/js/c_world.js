@@ -63,11 +63,11 @@ function buildTown() {
   const z = new Zone('town', 'Lanternhold', 44, 32, { seed: 11, dark: 0.62, tint: '#0a1028', style: 'town', music: 0, canopy: 'oak' });
   z.fill(T.GRASS);
   z.scatter(T.DGRASS, (x, y) => fbm(x * .15, y * .15, 3) > .55);
-  z.border(2, T.TREE, [[42, 14, 2, 5]]);
+  z.border(2, T.TREE, [[42, 14, 2, 5], [0, 14, 2, 5]]);
   z.scatter(T.TREE, (x, y, t) => (t === T.GRASS || t === T.DGRASS) && (x < 4 || x > 39 || y < 4 || y > 27) && hash2(x, y, 5) > .55);
   z.rect(13, 10, 18, 13, T.PLAZA);
   z.path([[30, 16], [43, 16]], 3, T.PATH, 0.4);
-  z.path([[13, 16], [2, 16]], 3, T.PATH, 0.6);
+  z.path([[13, 16], [0, 16]], 3, T.PATH, 0.6);
   z.path([[22, 22], [22, 30]], 3, T.PATH, 0.6);
   z.path([[22, 11], [22, 0]], 3, T.PATH, 0.3);
   z.house(3, 4, 8, 6); z.house(33, 4, 8, 6); z.house(3, 22, 8, 6); z.house(33, 22, 8, 6); z.house(14, 2, 6, 6); z.house(24, 2, 6, 6);
@@ -78,7 +78,8 @@ function buildTown() {
   z.lantern(20, 3); z.lantern(24, 3);
   z.portals.push({ x: 43, y: 14, w: 1, h: 5, to: 'brightfield', entry: 'west', label: 'Brightfield' });
   z.portals.push({ x: 20, y: 0, w: 4, h: 1, to: 'frostspire', entry: 'south', label: 'Frostspire Pass', push: [0, 48], req: ch1Done, lock: 'Deep snow buries the north road. The way opens once the First Lantern burns again.' });
-  z.entries = { start: [22, 20], east: [40.5, 16.5], north: [22, 2.6] };
+  z.portals.push({ x: 0, y: 14, w: 1, h: 5, to: 'emberwood', entry: 'east', label: 'Emberwood', req: () => typeof ch2Done === 'function' && ch2Done(), lock: 'Smoke hangs over the west road. Finish what waits at Frostspire first.' });
+  z.entries = { start: [22, 20], east: [40.5, 16.5], north: [22, 2.6], west: [2.8, 16.5] };
   z.waystone = { x: 18, y: 13 };
   return z;
 }

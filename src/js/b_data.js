@@ -1,6 +1,6 @@
 /* ===================== DATA ===================== */
 const XP_NEED = [0, 100, 150, 210, 280, 360, 450, 560, 680, 820, 1000, 1180, 1380, 1600, 1850];
-while (XP_NEED.length < 50) XP_NEED.push(Math.round(XP_NEED[XP_NEED.length - 1] * 1.115 / 10) * 10);
+while (XP_NEED.length < 50) XP_NEED.push(Math.round(XP_NEED[XP_NEED.length - 1] * 1.09 / 10) * 10);
 XP_NEED.push(Infinity);
 const MAX_LVL = 50;
 const BEACON_BOSS = { b1: 'gnarl', b2: 'witch', b3: 'king', b4: 'wyrm' };
