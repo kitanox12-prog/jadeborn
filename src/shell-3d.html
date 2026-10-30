@@ -1,0 +1,265 @@
+<title>Jadeborn 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almendra:wght@400;700&family=Alegreya+Sans:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: full-bleed canvas world; HUD pinned to screen corners like an MMO; windows float centered. Single committed night look. */
+:root{
+  --night:#0b0e15; --panel:#151a23; --panel2:#1d2430; --edge:#3a3226;
+  --brass:#e0a64e; --brass-dim:#9c7436; --jade:#46c495; --jade-dim:#2b7d5f;
+  --blood:#d4503f; --mana:#4a8fe0; --rage:#c9573a; --xp:#b48be8;
+  --parch:#ece2c9; --mute:#9a978e;
+  --display:"Almendra", "Palatino Linotype", Palatino, Georgia, serif;
+  --body:"Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;background:var(--night);color:var(--parch);overflow:hidden;font-family:var(--body);font-size:14px;-webkit-user-select:none;user-select:none;touch-action:none}
+canvas#game{position:fixed;inset:0;display:block;cursor:crosshair;background:transparent}
+#title .heroes canvas,.unit canvas,#dialog canvas{image-rendering:auto!important}
+#title .heroes canvas{width:128px!important;height:192px!important}
+#title{background:radial-gradient(ellipse at 50% 60%,rgba(70,196,149,.10),transparent 55%),radial-gradient(ellipse at 50% 120%,rgba(224,166,78,.22),transparent 60%),rgba(6,8,12,.55)!important}
+.hud{position:fixed;inset:0;pointer-events:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.hud > *{pointer-events:auto}
+.frame{background:linear-gradient(180deg,rgba(29,36,48,.92),rgba(17,21,29,.92));border:1px solid var(--edge);box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 1px 0 rgba(224,166,78,.12);border-radius:4px}
+#party{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:6px}
+.unit{display:flex;gap:8px;align-items:center;padding:6px 10px 6px 6px;width:236px;cursor:pointer;position:relative}
+.unit.active{border-color:var(--brass);box-shadow:0 0 12px rgba(224,166,78,.35)}
+.unit canvas{width:44px;height:44px;border:1px solid var(--edge);border-radius:3px;background:#0d1016;image-rendering:pixelated}
+.unit .meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.unit .nm{font-family:var(--display);font-size:15px;line-height:1;display:flex;justify-content:space-between;gap:6px}
+.unit .nm small{font-family:var(--body);font-size:11px;color:var(--mute);letter-spacing:.04em}
+.bar{height:10px;background:#07090d;border:1px solid #000;border-radius:2px;position:relative;overflow:hidden}
+.bar > i{position:absolute;inset:0 auto 0 0;display:block;transition:width .12s linear}
+.bar > b{position:absolute;inset:0;font-size:9px;line-height:10px;text-align:center;font-weight:700;color:#fff;text-shadow:0 1px 1px #000;font-variant-numeric:tabular-nums}
+.hp > i{background:linear-gradient(180deg,#6fd36a,#2f8a35)}
+.hp.low > i{background:linear-gradient(180deg,#e2705e,#9b2a20)}
+.hp > s{position:absolute;inset:0 auto 0 0;background:rgba(170,230,255,.55);display:block}
+.mana > i{background:linear-gradient(180deg,#6aa9f0,#2a5a9e)}
+.rage > i{background:linear-gradient(180deg,#e2734f,#8e2e19)}
+.bar.thin{height:6px}
+.buffs{display:flex;gap:2px;flex-wrap:wrap;min-height:0}
+.buff{width:14px;height:14px;border-radius:2px;border:1px solid #000;font-size:8px;line-height:12px;text-align:center;font-weight:800;color:#000}
+.unit .dead{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.6);font-family:var(--display);color:var(--blood);font-size:18px;border-radius:4px}
+#target{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);padding:6px 12px;width:280px;display:flex;flex-direction:column;gap:4px}
+#target .tn{font-family:var(--display);font-size:16px;display:flex;justify-content:space-between;align-items:baseline}
+#target .tn small{font-family:var(--body);font-size:11px;color:var(--mute)}
+#target.elite{border-color:var(--brass)}
+#target.boss{border-color:var(--blood);box-shadow:0 0 14px rgba(212,80,63,.35)}
+#mmwrap{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));padding:6px;display:flex;flex-direction:column;gap:4px;align-items:stretch}
+#zonename{font-family:var(--display);font-size:15px;text-align:center;color:var(--brass);letter-spacing:.03em}
+#minimap{display:block;width:168px;height:120px;image-rendering:pixelated;border:1px solid #000}
+.mmbtns{display:flex;gap:4px;justify-content:space-between}
+.btn{font-family:var(--body);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:#232a36;color:var(--parch);border:1px solid var(--edge);border-radius:3px;padding:4px 7px;cursor:pointer}
+.btn:hover{border-color:var(--brass);color:#fff}
+.btn:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+.btn.primary{background:linear-gradient(180deg,#7a5420,#4e3412);border-color:var(--brass);color:#fff3da}
+.btn kbd{font-family:var(--body);color:var(--brass);margin-left:3px}
+#tracker{position:absolute;top:calc(180px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));width:230px;display:flex;flex-direction:column;gap:8px;pointer-events:none;text-shadow:0 1px 2px #000,0 0 4px #000}
+#tracker h4{margin:0;font-family:var(--display);font-size:15px;color:var(--brass);font-weight:400}
+#tracker .q{display:flex;flex-direction:column;gap:1px}
+#tracker .o{font-size:12.5px;color:#d9d4c6;font-variant-numeric:tabular-nums}
+#tracker .o.done{color:var(--jade)}
+#bottom{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:5px}
+#castbar{width:260px;display:none}
+#gaugeRow{display:flex;align-items:center;gap:8px}
+#gauge{width:300px;height:12px;border-radius:6px;border:1px solid #000;background:#07090d;position:relative;overflow:hidden;cursor:pointer}
+#gauge i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#2b7d5f,#46c495,#c9f5df);display:block}
+#gauge.full{box-shadow:0 0 14px var(--jade),0 0 2px #fff}
+#gauge.full i{animation:pulse 1s ease-in-out infinite alternate}
+@keyframes pulse{from{filter:brightness(1)}to{filter:brightness(1.5)}}
+#gaugeLbl{font-family:var(--display);font-size:13px;color:var(--jade);min-width:110px}
+#bar{display:flex;gap:5px;padding:6px}
+.slot{width:48px;height:48px;border:1px solid #000;border-radius:4px;position:relative;cursor:pointer;background:#0e1219;overflow:hidden}
+.slot canvas{width:100%;height:100%;display:block}
+.slot .cd{position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.72) var(--p,0%),transparent 0);pointer-events:none}
+.slot .cdn{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:16px;text-shadow:0 1px 2px #000;pointer-events:none}
+.slot .key{position:absolute;left:3px;top:1px;font-size:11px;font-weight:800;color:var(--parch);text-shadow:0 1px 2px #000}
+.slot .cost{position:absolute;right:3px;bottom:1px;font-size:10px;font-weight:700;text-shadow:0 1px 2px #000}
+.slot.oom canvas{filter:saturate(.3) brightness(.6)}
+.slot.locked{opacity:.35}
+.slot.locked::after{content:attr(data-lv);position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--parch);background:rgba(0,0,0,.5)}
+.slot.flash{box-shadow:inset 0 0 0 2px var(--brass)}
+.slot.pot{border-color:#5a2f2a}
+#xpbar{width:100%;height:5px;background:#07090d;border:1px solid #000;position:relative;border-radius:2px;overflow:hidden}
+#xpbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#6c4fa8,var(--xp));display:block}
+#log{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));width:300px;max-height:150px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;font-size:12px;pointer-events:none;text-shadow:0 1px 2px #000,0 0 3px #000}
+#log div{opacity:.95}
+#menu{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:260px}
+.win{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:calc(100vw - 24px);max-height:calc(100vh - 40px);overflow:auto;padding:14px 16px;z-index:20;background:linear-gradient(180deg,#1b212c,#12161e);border:1px solid var(--brass-dim);border-radius:6px;box-shadow:0 18px 60px rgba(0,0,0,.7),inset 0 1px 0 rgba(224,166,78,.15)}
+.win h2{margin:0 0 10px;font-family:var(--display);font-weight:700;font-size:22px;color:var(--brass);display:flex;justify-content:space-between;align-items:center;gap:10px;text-wrap:balance}
+.win h3{margin:0 0 6px;font-family:var(--display);font-weight:400;font-size:17px;color:var(--parch)}
+.x{background:none;border:0;color:var(--mute);font-size:22px;cursor:pointer;line-height:1}
+.x:hover{color:#fff}
+#winChar{width:720px}
+.chargrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.charcol{display:flex;flex-direction:column;gap:6px;min-width:0}
+.stats{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;font-size:12.5px;font-variant-numeric:tabular-nums;color:#cfc9ba}
+.stats b{color:var(--parch);font-weight:700;text-align:right}
+.eqrow{display:flex;gap:6px}
+.eq,.bagslot{width:46px;height:46px;border:1px solid #000;border-radius:3px;background:#0b0e14;position:relative;cursor:pointer;display:grid;place-items:center}
+.eq canvas,.bagslot canvas{width:36px;height:36px;image-rendering:pixelated}
+.eq .lab{position:absolute;bottom:1px;left:0;right:0;font-size:9px;text-align:center;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.bag{display:grid;grid-template-columns:repeat(8,46px);gap:4px;margin-top:10px}
+.bagslot .n{position:absolute;right:2px;bottom:0;font-size:11px;font-weight:800;text-shadow:0 1px 2px #000}
+.r0{border-color:#555!important}.r1{border-color:#3fbf4f!important}.r2{border-color:#3f8fe8!important}.r3{border-color:#b05ce8!important}
+.c0{color:#d8d8d8}.c1{color:#5fdc6c}.c2{color:#5aa6ff}.c3{color:#c27cff}
+.gold{color:#f2c75c;font-weight:700;font-variant-numeric:tabular-nums}
+.tip{position:fixed;z-index:50;pointer-events:none;max-width:280px;padding:8px 10px;background:rgba(10,12,18,.97);border:1px solid var(--brass-dim);border-radius:4px;font-size:12.5px;line-height:1.35;box-shadow:0 6px 20px rgba(0,0,0,.6)}
+.tip .t{font-family:var(--display);font-size:15px;margin-bottom:2px}
+.tip .s{color:var(--mute);font-size:11.5px}
+.tip .g{color:var(--jade)}.tip .bd{color:var(--blood)}
+#winQuests{width:640px}
+.qlist{display:grid;grid-template-columns:210px 1fr;gap:14px;min-height:300px}
+.qitems{display:flex;flex-direction:column;gap:3px;border-right:1px solid var(--edge);padding-right:10px}
+.qitem{padding:5px 7px;border-radius:3px;cursor:pointer;font-size:13px}
+.qitem:hover,.qitem.sel{background:#262e3b}
+.qitem.done{color:var(--mute);text-decoration:line-through}
+.qitem .st{float:right;color:var(--brass);font-weight:800}
+.qdesc{font-size:14px;line-height:1.5;color:#d6d0c1;max-width:62ch;min-width:0}
+.qdesc .o{color:var(--parch)}
+#dialog{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(120px + env(safe-area-inset-bottom,0px));width:min(640px,calc(100vw - 24px));z-index:30;display:flex;gap:14px;padding:14px 16px;cursor:pointer}
+#dialog canvas{width:84px;height:84px;flex:none;border:1px solid var(--edge);border-radius:4px;background:#0b0e14;image-rendering:pixelated}
+#dialog .who{font-family:var(--display);font-size:18px;color:var(--brass);margin-bottom:3px}
+#dialog .txt{font-size:15.5px;line-height:1.45;max-width:60ch}
+#dialog .more{font-size:11px;color:var(--mute);margin-top:6px;letter-spacing:.06em;text-transform:uppercase}
+#dialog .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+#talent{width:620px}
+.tpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.tcard{padding:10px;border:1px solid var(--edge);border-radius:4px;background:#161b24;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.tcard:hover{border-color:var(--brass)}
+.tcard.sel{border-color:var(--jade);box-shadow:0 0 0 1px var(--jade) inset;background:#14231e}
+.tcard b{font-family:var(--display);font-size:16px;font-weight:400;color:var(--parch)}
+.tcard span{font-size:12.5px;color:#c9c3b3}
+#title{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));background:radial-gradient(ellipse at 50% 60%,rgba(70,196,149,.12),transparent 55%),radial-gradient(ellipse at 50% 120%,rgba(224,166,78,.25),transparent 60%),rgba(6,8,12,.86);text-align:center}
+#title h1{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(44px,9vw,92px);line-height:.95;color:var(--parch);text-shadow:0 0 30px rgba(224,166,78,.35);letter-spacing:.01em}
+#title h1 em{display:block;font-style:normal;font-weight:400;font-size:.36em;color:var(--brass);letter-spacing:.32em;text-transform:uppercase;margin-top:12px}
+#title p{max-width:52ch;color:#cfc8b6;line-height:1.55;margin:0;font-size:15px}
+#title .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#title .btn{font-size:14px;padding:10px 18px}
+#title .heroes{display:flex;gap:28px;align-items:flex-end}
+#title .heroes canvas{width:96px;height:144px;image-rendering:pixelated}
+#title .heroes div{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--display);font-size:16px}
+#title .heroes small{font-family:var(--body);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+#title .keys{font-size:12px;color:var(--mute);max-width:60ch;line-height:1.6}
+#fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:35;transition:opacity .35s}
+#banner{position:fixed;left:0;right:0;top:22%;text-align:center;z-index:25;pointer-events:none;font-family:var(--display);font-size:clamp(30px,5vw,52px);color:var(--parch);text-shadow:0 0 24px rgba(0,0,0,.9),0 0 12px rgba(224,166,78,.45);opacity:0;transition:opacity .6s}
+#banner small{display:block;font-family:var(--body);font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--brass);margin-top:4px}
+#toast{position:fixed;left:50%;top:calc(90px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:26;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px}
+#toast div{background:rgba(10,12,18,.88);border:1px solid var(--brass-dim);padding:5px 12px;border-radius:3px;font-size:13.5px;animation:tin .25s ease-out}
+@keyframes tin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+#help{width:600px}
+#help table{border-collapse:collapse;width:100%;font-size:13.5px}
+#help td{padding:4px 6px;border-bottom:1px solid #262c37;vertical-align:top}
+#help td:first-child{color:var(--brass);font-weight:800;white-space:nowrap}
+#ending{width:620px;text-align:center}
+#ending p{line-height:1.6;color:#d6d0c1;max-width:58ch;margin:8px auto}
+#swapBtn{display:none}
+@media (max-width:820px){
+  #party{transform:scale(.82);transform-origin:top left}
+  #target{top:auto;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:230px}
+  #mmwrap{transform:scale(.8);transform-origin:top right}
+  #tracker{top:calc(150px + env(safe-area-inset-top,0px));width:180px;font-size:11px}
+  #log{display:none}
+  .slot{width:40px;height:40px}
+  #gauge{width:200px}
+  #winChar{width:auto}
+  .chargrid{grid-template-columns:1fr}
+  .bag{grid-template-columns:repeat(6,46px)}
+  .qlist{grid-template-columns:1fr}
+  .qitems{border-right:0;border-bottom:1px solid var(--edge);padding:0 0 8px}
+  #swapBtn{display:inline-block}
+  #gaugeRow > span:last-child{display:none}
+  #gaugeLbl{min-width:0;font-size:11px}
+  #gauge{width:170px}
+  #menu{bottom:calc(122px + env(safe-area-inset-bottom,0px))}
+  #target{bottom:calc(160px + env(safe-area-inset-bottom,0px))}
+  #dialog{bottom:calc(170px + env(safe-area-inset-bottom,0px))}
+  #bar{gap:3px;padding:4px}
+}
+@media (prefers-reduced-motion:reduce){#gauge.full i{animation:none}#toast div{animation:none}}
+</style>
+
+<canvas id="game"></canvas>
+<div class="hud" id="hud" hidden>
+  <div id="party"></div>
+  <div id="target" class="frame" hidden>
+    <div class="tn"><span id="tName">—</span><small id="tLvl"></small></div>
+    <div class="bar hp" id="tHp"><i></i><b></b></div>
+    <div class="buffs" id="tBuffs"></div>
+  </div>
+  <div id="mmwrap" class="frame">
+    <div id="zonename">Lanternhold</div>
+    <canvas id="minimap" width="168" height="120"></canvas>
+    <div class="mmbtns">
+      <button class="btn" id="bChar" title="Character and bags (C)">Bags<kbd>C</kbd></button>
+      <button class="btn" id="bQuest" title="Quest log (L)">Quests<kbd>L</kbd></button>
+      <button class="btn" id="bHelp" title="Controls (H)">?</button>
+    </div>
+  </div>
+  <div id="tracker"></div>
+  <div id="log"></div>
+  <div id="menu">
+    <button class="btn" id="bCoop">Co-op: off</button>
+    <button class="btn" id="swapBtn">Swap</button>
+    <button class="btn" id="bSound">Sound: on</button>
+    <button class="btn" id="bSave">Save</button>
+  </div>
+  <div id="bottom">
+    <div id="gaugeRow"><span id="gaugeLbl">Lantern 0%</span><div id="gauge" title="Lanternburst (F) — fills as you fight and heal"><i></i></div><span style="min-width:110px"></span></div>
+    <div id="bar" class="frame"></div>
+    <div id="xpbar" title="Experience"><i></i></div>
+  </div>
+</div>
+
+<div id="winChar" class="win" hidden></div>
+<div id="winQuests" class="win" hidden></div>
+<div id="talent" class="win" hidden></div>
+<div id="help" class="win" hidden>
+  <h2>How to play <button class="x" data-close="help" aria-label="Close">×</button></h2>
+  <table>
+    <tr><td>W A S D / Arrows</td><td>Move the hero you control. Tap or click open ground to walk there.</td></tr>
+    <tr><td>Click an enemy</td><td>Target it and start auto-attacking. <b>Tab</b> cycles nearby enemies.</td></tr>
+    <tr><td>1 – 6</td><td>Abilities. Hover a slot to read what it does. New ones unlock as you level.</td></tr>
+    <tr><td>Q</td><td>Swap between Orhun and Handan. The other is played by the AI and fights with you.</td></tr>
+    <tr><td>F</td><td>Lanternburst when the jade gauge is full: heals both heroes and scorches nearby enemies.</td></tr>
+    <tr><td>R</td><td>Drink a Healing Draught (shared 20s cooldown).</td></tr>
+    <tr><td>E / Space</td><td>Talk, pick up glowing quest items, relight beacons, advance dialogue.</td></tr>
+    <tr><td>C · L (or X) · H · Esc</td><td>Bags and gear · Quest log · This help · Close windows / clear target.</td></tr>
+    <tr><td>Roles</td><td><b>Orhun</b> is the duelist off-tank: he holds threat with Sunder and Challenging Roar and hits hard with Executioner's Edge. <b>Handan</b> is the loreweaver: damage and roots from range, plus Mending Light and Jade Ward to keep Orhun standing. Lumen, her spirit fox, fights at her side.</td></tr>
+    <tr class="coopHead"><td colspan="2" style="color:var(--parch);font-family:var(--display);font-size:16px;padding-top:12px">Two players, one keyboard</td></tr>
+    <tr><td>P1 · Orhun</td><td>WASD move · 1–6 abilities · Tab target · E interact · R draught · F Lanternburst · mouse clicks</td></tr>
+    <tr><td>P2 · Handan</td><td>Arrow keys move · U I O / J K L abilities (or Numpad 1–6) · P target · Enter interact · N draught · M Lanternburst</td></tr>
+    <tr><td>In co-op</td><td>Turn it on from the title screen or the Co-op button. The camera follows you both and keeps you on one screen. Handan's heals still find the most wounded hero on their own. Quest log moves to X.</td></tr>
+    <tr><td>Red circles</td><td>Boss attacks wind up as red circles on the ground. Step out before they fill.</td></tr>
+  </table>
+</div>
+<div id="dialog" class="frame" hidden>
+  <canvas id="dlgPortrait" width="84" height="84"></canvas>
+  <div style="flex:1;min-width:0">
+    <div class="who" id="dlgWho"></div>
+    <div class="txt" id="dlgTxt"></div>
+    <div class="acts" id="dlgActs"></div>
+    <div class="more" id="dlgMore">Click or press Space</div>
+  </div>
+</div>
+<div id="ending" class="win" hidden></div>
+<div id="title">
+  <div class="heroes">
+    <div><canvas id="tOrhun" width="96" height="144"></canvas>Orhun<small>Duelist</small></div>
+    <div><canvas id="tHandan" width="96" height="144"></canvas>Handan<small>Loreweaver</small></div>
+  </div>
+  <h1>Jadeborn<em>The Ember Road</em></h1>
+  <p>The night lanterns of Velmara are going dark one by one, and the Hollow rise wherever they fail. Handan's jade pendant is the last shard of the First Lantern. Walk the Ember Road together and relight the beacons before the Hollow King swallows the last light.</p>
+  <div class="row">
+    <button class="btn primary" id="bContinue" hidden>Continue</button>
+    <button class="btn primary" id="bNew">New journey</button>
+    <button class="btn" id="bHelp2">Controls</button>
+  </div>
+  <div class="row"><button class="btn" id="bPlayers">Players: 1</button></div>
+  <div class="keys">WASD to move · Click enemies to attack · 1–6 abilities · Q swap hero · F Lanternburst · E interact · Best with keyboard and mouse.</div>
+</div>
+<div id="fade"></div>
+<div id="banner"></div>
+<div id="toast"></div>
+<div id="tip" class="tip" hidden></div>
