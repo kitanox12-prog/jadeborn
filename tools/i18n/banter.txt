@@ -1,0 +1,42 @@
+intro|Doğu yolundaki fenerler dün gece yine karardı. Bununla dokuz oldu.|O zaman yine yakarız. Bütün plan bu, değil mi?|Sen önde durup bir şeylere vuruyorsun. Ben de seni ayakta tutuyorum. Lumen herkesi yargılıyor.|Adil bir iş bölümü. Bilge Maren birini bizi sürüklemeye göndermeden yanına gidelim.
+Brightfield|Burası yağmur ve kurt kokuyor.|Lumen de sevmedi. Kuyruğu kabarmış.
+Murkfen|Kolyem ısındı. Bu bataklıkta bir şey İlk Fener'i hatırlıyor.|Dizime kadar çamur ve perili bir bataklık. Beni hep en güzel yerlere götürüyorsun.|Daha çok gezmek istediğini söylemiştin.
+Hollow Keep|İçeride ne olursa olsun...|...birlikte çıkacağız. Düzgünce söyle.|Birlikte çıkacağız.
+gnarl|Bu bir yaban domuzu değil. Bu dişli bir tepe.|O zaman sen daha yüksek bir tepe ol. İyileştirmeyi ben hallederim.
+witch|Bataklığıma dalan iki küçük mum. Işığınızı yavaş yavaş içeceğim.|Orhun, onun dikkatini üstünde tut. Su birikintilerini ben hallederim.
+king|Fener taşıyıcı geri döndü. Parçayı ver çocuk, karanlığı acısız kılayım.|O hayır dedi. Ben daha yüksek sesle söylüyorum.|Kolye uyandığında elinde kalan her şeye ihtiyacım olacak. Yakın dur.
+Frostspire Pass|Nefesim donuyor. Ve kolye... soğuk, Orhun. Hiç soğuk olmamıştı.|O zaman ocağı bulup yeniden ısıtırız. Yanımdan ayrılma.|Daha yakın olursam beni taşıman gerekecek.|İlk sefer olmazdı.
+ch2|Orhun. Kolye yine soğudu. Işık kalmadı.|O zaman bitmedi demek. Bilge Maren ne biliyor, dinleyelim.
+wyrm|Küçük alevler. Taç bana sizden bahsetti. Daha... küçük olacağınızı söylemişti.|Komik. Kral da buna benzer bir şey söylemişti.|Nefesine dikkat! Parladığında maviden çık!
+b4|Ocak şarkı söylüyor. Kolyede duyabiliyorum.|Velmara'daki her fener bunu hissedecek.
+b1|Sıcak. Alev kolyeyi tanıyor.|Biri tamam. Şu ışığa bak.
+b2|İki işaret feneri. Lanternhold'un ışıltısını buradan görebiliyorum.|Sırada Kale var. Beni çektiğini hissediyorum.
+levelup|Güçleniyorum. Hoşuma gidiyor.|Yeni bir şey öğrendim. Sana göstermemi hatırlat.|Bu bir seviye miydi? Bu bir seviyeydi.|Lumen havalara giriyor. Senin suçun.
+lowhp|Orhun! Geri çekil, seni tuttum!|Handan, arkanda!
+ch3|Bu kokuyu alıyor musun? Duman, batı yolundan.|Emberwood. Maren oraya artık kimsenin gitmediğini söylüyor.|O zaman biri gitmeli. Onunla konuşalım.
+Emberwood|Yapraklar yanıyor ama hiçbir şey alev almıyor.|Bu Hiçlik. Ormanı bir pelerin gibi giyiyor.|Yakın dur. Şu ağaçların bize bakışını hiç sevmedim.
+morrow|Küçük fenerler... köklerim ışığı hatırlıyor. Acıttığını hatırlıyorlar.|Sen de bir zamanlar Kral gibi bir koruyucuydun. Bunu nazikçe bitirelim.|Nazikçe. Tabii. Kor yağmuruna dikkat!
+b5|Kalp Korusu Feneri. Bahar gibi kokuyor.|Brannoc bunu bizden duymak isteyecek.
+Glasswater Vale|Koca bir şehir suyun altında. Şu kulelere bak.|Adımına dikkat et. Seni gölden çıkaracak değilim.|Çıkarırdın ama.|...Çıkarırdım.
+tide|Derinlik aldığı her şeyi saklar. Sizi de saklayacak.|Bugün değil.|Dalga çizgisi parlayınca üstünden çekilin!
+b6|Gelgit Işığı. Bütün dünyada tek bir karanlık fener kaldı.|Tek bir tane. Sonra eve gidiyoruz.
+The Starless Crown|Yıldız yok. Tek bir tane bile.|O zaman kendimizinkini getirdik.|Bu neredeyse şiirseldi.|Kimseye söyleme.
+sovereign|Yaktığınız her fenerin arasındaki karanlık benim. Tutuşturduğunuz her alev gölgemi daha da uzattı.|O zaman hiç gölge kalmayana kadar yanacağız.|Birlikte. Her zamanki gibi.
+sovereign3|Orhun, kolye... cevap veriyor! İkimizi de istiyor!|O zaman tut elimi. Fener Patlaması, birlikte!
+Sunscar Dunes|Öyle sıcak ki, gece bile.|Gökyüzüne bak. O güneş bizim değil.|O zaman söndürürüz.
+scorpqueen|Çölümde minik ışıklar. Sizi kervanlarla birlikte gömeceğim.|Kuyruğa dikkat!|Yanan çemberlerden uzak durun!
+b8|Güneş Kuyusu. Hissediyor musun? Gerçek bir sıcaklık.|Bir güneş söndü. Talia bunu duymak isteyecek.
+Thornveil|Burada her şey yeşil. Karanlık bile yeşil.|Ve buradaki her şey bizi yemek istiyor.|Her şey değil. Bak, ateşböcekleri.
+rootmother|Küçük kıvılcımlar... eski yolu nasıl sardıysam sizi de öyle saracağım.|Ayağının altındaki köklere dikkat!|Tuzaklardan yuvarlanarak kurtul. Ciddiyim.
+b9|Yeşil Fener. Kolye gibi yeşil parlıyor.|Senin gibi, yani.
+Cindermaw Caldera|Lava dikkat. Lava dokunma. Ciddiyim.|Lava dokunacak değildim, Orhun.|Donmuş göle dokunmuştun ama.
+ignivar|Ağabeyim dondu. Ablam boğuldu. Ben yanacağım.|Çizgi hâlinde ateş püskürüyor! Uzak durun!|O zaman aile işini kapatalım.
+b10|Yürek Ocağı. İlk Alev'le aynı şarkıyı söylüyor.|Garrick ağlayacak. Benim söylediğimi ona söyleme.
+Skyreach Spires|Orhun, bulutların üstündeyiz. Gerçekten üstündeyiz.|Aşağı bakma. Aşağı bakma.|Aşağı baktın.
+zephyrion|Velmara'nın üstünde kopan her fırtına bendim. Siz rüzgârdaki iki mumsunuz.|Yerde şimşek! Kıpırdayın!|Mumlar fırtınalardan uzun yanar.
+b11|Fırtına Feneri. Rüzgâr şarkı söylüyor.|Bir tane daha. Sadece bir tane daha.
+The Dawnless Gate|Her şey kırmızı. Sanki gökyüzü kanıyor.|O zaman yarayı kapatırız.|Birlikte mi?|Her zaman.
+umbrath|İlk fenerden önce buradaydım. Sonuncusundan sonra da burada olacağım.|Bundan sonra değil.|Yanımdan ayrılma, Handan.
+b12|Şafak Feneri...|Doğuya bak.
+umbrath3|Orhun! Yaktığımız bütün fenerler cevap veriyor! Hepsini hissedebiliyorum!|O zaman sonuncusunu birlikte yakalım. Bana tutun!
+ch6|Orhun... güneydeki gökyüzü. Bu bir gündoğumu mu?|Hayır. O ışık yanlış. Fazla kızıl.|Liora bilir. Onu bulalım.

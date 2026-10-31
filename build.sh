@@ -4,8 +4,8 @@ set -e
 cd "$(dirname "$0")"
 JS=src/js
 CORE="$JS/a_core.js $JS/b_data.js $JS/c_world.js $JS/d_gfx.js $JS/e_game.js $JS/e2_qol.js $JS/e3_progress.js $JS/f_ui.js $JS/e4_acts.js $JS/e5_polish.js $JS/e6_leisure.js $JS/e7_acts2.js"
-cat $CORE $JS/s_survivor.js $JS/h_touch.js $JS/h2_menu.js $JS/i_pad.js $JS/z_boot.js > /tmp/jb_pixel.js
-cat $CORE $JS/g_three.js $JS/s_survivor.js $JS/h_touch.js $JS/h2_menu.js $JS/i_pad.js $JS/z_boot.js > /tmp/jb_3d.js
+cat $CORE $JS/s_survivor.js $JS/h_touch.js $JS/h2_menu.js $JS/l_tr.js $JS/l_i18n.js $JS/l_news.js $JS/i_pad.js $JS/z_boot.js > /tmp/jb_pixel.js
+cat $CORE $JS/g_three.js $JS/s_survivor.js $JS/h_touch.js $JS/h2_menu.js $JS/l_tr.js $JS/l_i18n.js $JS/l_news.js $JS/i_pad.js $JS/z_boot.js > /tmp/jb_3d.js
 node --check /tmp/jb_pixel.js && node --check /tmp/jb_3d.js
 VER=$(date +%Y%m%d%H%M%S)
 head_html() { # $1 alt label, $2 alt href, $3 pref, $4 extra js

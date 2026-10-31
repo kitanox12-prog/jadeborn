@@ -24,6 +24,9 @@ A browser action RPG starring Orhun (Duelist, off-tank) and Handan (Loreweaver, 
 - `s_survivor.js` — Lantern Dreams (survivor / bullet-hell mode, `G.mode = 'survivor'`): 4 stages (`SV_STAGES`), auto-firing skills (`SVW`, 6 per hero, evolutions at level 7 with a matching relic), relics (`SVP`), XP gems, elites/chests, boss at 15:00, Lantern Forge meta upgrades (localStorage `jadeborn_survivor_meta`). Endless arena = 40x40 wrapping pattern tiled 3x3 with `svRecenter`. Rendering: cached 2D foe sprites + tiled `drawImage`; 3D instanced horde (`svRender3D`, foes flagged `svHorde`). Wraps `update`, `kill`, `heroes`, `recalcStats`, `onKeyPress`, `useAbility` and friends; never saves the story.
 - `h_touch.js` — phone layer (active only on coarse pointers): joystick, round ability buttons (tap to cast, hold for tooltip), Talk/Relight button, rotate hint, tap-twice for items.
 - `h2_menu.js` — the ☰ game menu (`addMenuItem` registry used by every feature) and the compact phone HUD.
+- `l_tr.js` — generated Turkish dictionary `TR_DICT` (English text with numbers as `#` → Turkish). Do not edit by hand; see Languages below.
+- `l_i18n.js` — language switch (`LANG`, localStorage `jadeborn_lang`, defaults to the browser language), `tr()`/`trHTML()`, content tables translated at load, wrappers for canvas text, toasts, banners and dialogue, a MutationObserver for page text, `TR_PATS` for sentences with names, `trItem()` for generated item names.
+- `l_news.js` — the in-game changelog (`CHANGELOG`, one entry per `JB_VERSION`, written in English and Turkish), shown once per version to returning players, title-screen footer (language + What's new), Lantern Dreams entry in the ☰ menu.
 - `i_pad.js` — Gamepad API (1–2 controllers), wraps `update`.
 - `z_boot.js` — starts the game.
 - Simulation units are pixels (32 px = 1 tile); 3D maps x/32 → X, y/32 → Z.
@@ -37,7 +40,14 @@ A browser action RPG starring Orhun (Duelist, off-tank) and Handan (Loreweaver, 
 - Survivor balance knobs: `svHpCurve`/`svAtkCurve` (stage `mult` steepens them), `svNeed` (run XP), spawn cap in `svSpawnTick`. Test with a headless bot that calls `update(1/30)` in a loop (see the session's sv1.js).
 - Level cap 50 (`XP_NEED`); talents at 3–15, a boon choice every level. Weapon types: Orhun sword/greataxe/spear/twinblades, Handan staff/orb/wand/tome (`WPROF` in e_game.js).
 
+## Languages (English / Türkçe)
+- Source text stays English in the code. Turkish lives in `tools/i18n/*.txt`: `quests.txt` (id|name|text|done|labels), `banter.txt` and `talk.txt` (key|line|line…), and `EN => TR` sheets (`data.txt`, `ui.txt`, `ui2.txt`; any extra `.txt` is picked up). Use `#` for numbers, `#1`…`#9` when Turkish needs another order.
+- Names are never translated (Orhun, Handan, Lumen, NPC names, zone names); titles and epithets are ("Elder Maren" → "Bilge Maren", "Vyrmhal, the Cold Crown" → "Vyrmhal, Soğuk Taç"). Turkish terms: Hollow = Hiçlik, lantern = fener, beacon = işaret feneri, boon = lütuf, skill = beceri, talent = yetenek, Healing Draught = Şifa İksiri, Act = Perde.
+- After adding or changing text: add the Turkish line, run `python3 tools/i18n/gen.py`, then `./build.sh`. If quest/banter/talk English changed, refresh `tools/i18n/en_content.json` with `node tools/i18n/dump.js` (local server on :8765) first.
+- To find missing Turkish: play with `localStorage.jadeborn_lang = 'tr'` and read `[...TR_MISS]` in the console (it also lists names and already-Turkish fragments; ignore those).
+- New version: bump `JB_VERSION` (e5_polish.js) and add an entry at the top of `CHANGELOG` in both languages.
+
 ## Conventions
-- In-game text is English. NPC/pet names are generic fantasy names (not Turkish).
+- In-game text is written in English in the code and translated to Turkish through the sheets above. NPC/pet names are generic fantasy names (not Turkish).
 - Keep the game a single self-contained page per build; no external runtime requests except Google Fonts (with fallbacks).
 - After changes, sanity-check both builds load without console errors (e.g. headless Chromium; use SwiftShader flags for the 3D build).

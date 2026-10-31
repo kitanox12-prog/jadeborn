@@ -113,7 +113,7 @@ for (const A of ACT_DEFS) {
   ACT_BY_ID[A.id] = A;
   const qid = i => 'q' + (A.q + i), m = A.xp;
   const xp = [2200, 4500, 4500, 5200, 5600, 9000].map(v => Math.round(v * m / 50) * 50);
-  const QS = A.quests, lbl = { kA: FOES[A.A].name + 's slain', kB: 'Foes of the ' + A.name + ' defeated', el: FOES[A.elite].name + 's broken', bo: FOES[A.boss].name.split(',')[0] + ' defeated', be: A.beaconName[0].toUpperCase() + A.beaconName.slice(1) + ' relit' };
+  const QS = A.quests, plural = n => n.replace(/^Echo of/, 'Echoes of').replace(/Colossus$/, 'Colossi').replace(/([^s])$/, '$1s'), lbl = { kA: plural(FOES[A.A].name) + ' slain', kB: 'Foes of the ' + A.name.replace(/^The /, '') + ' defeated', el: plural(FOES[A.elite].name) + ' broken', bo: FOES[A.boss].name.split(',')[0] + ' defeated', be: A.beaconName[0].toUpperCase() + A.beaconName.slice(1) + ' relit' };
   QUESTS.push(
     { id: qid(0), name: QS[0][0], giver: A.giver, turnin: A.npc, pre: [A.n === 6 ? 'q34' : 'q' + (A.q - 1)], zone: A.name, ch: A.n, text: QS[0][1], done: QS[0][2], obj: [{ t: 'visit', zone: A.id, n: 1, label: 'Reach ' + A.name }], xp: xp[0], gold: 150 * m | 0, potions: 4 },
     { id: qid(1), name: QS[1][0], giver: A.npc, pre: [qid(0)], zone: A.name, ch: A.n, text: QS[1][1], done: QS[1][2], obj: [{ t: 'kill', e: [A.A], n: 8, label: lbl.kA }], xp: xp[1], gold: 220 * m | 0 },

@@ -224,10 +224,10 @@
     <tr><td>Abilities</td><td>The six round buttons on the right. The corner one is your main attack. Hold any button to read what it does.</td></tr>
     <tr><td>Dodge</td><td>The button above your abilities. Orhun rolls and Handan steps through the jade in the direction you are moving. Attacks pass through you while dodging.</td></tr>
     <tr><td>Side buttons</td><td>Swap hero · Next target in a fight, or Ride Lumen outside of fights · Lanternburst (when the jade fills) · Healing Draught.</td></tr>
-    <tr><td>Travel</td><td>The Travel button under the map takes you to any waystone you have woken. Relighting a zone's beacon wakes its waystone; Lanternhold's is always open.</td></tr>
-    <tr><td>Auto-cast</td><td>Turn it on in the ⋯ menu and abilities fire by themselves during fights. You still move and pick targets.</td></tr>
+    <tr><td>Travel</td><td>Travel in the ☰ menu takes you to any waystone you have woken. Relighting a zone's beacon wakes its waystone; Lanternhold's is always open.</td></tr>
+    <tr><td>Auto-cast</td><td>Turn it on in the ☰ menu and abilities fire by themselves during fights. You still move and pick targets.</td></tr>
     <tr><td>Talk / Relight</td><td>A gold button appears when you stand near someone or a beacon. You can also tap people directly.</td></tr>
-    <tr><td>Menus</td><td>Bags, Quests and ⋯ (sound, save, help) sit under the map. In bags, tap an item once to read it, tap again to equip or sell.</td></tr>
+    <tr><td>Menus</td><td>Everything else (bags, skills, quests, travel, wardrobe, photo mode, save) is in the ☰ menu under the map. In bags, tap an item once to read it, tap again to equip or sell.</td></tr>
     <tr><td>Roles</td><td><b>Orhun</b> holds enemies with Sunder and Challenging Roar and hits hard. <b>Handan</b> casts from range, roots, and heals with Mending Light and Jade Ward. The hero you are not playing fights on their own.</td></tr>
     <tr><td>Red circles</td><td>Boss attacks wind up as red circles on the ground. Step out before they fill.</td></tr>
   </table>`;

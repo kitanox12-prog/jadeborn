@@ -1,0 +1,2274 @@
+{
+ "quests": [
+  {
+   "id": "q1",
+   "name": "The Dark East Road",
+   "text": "Hollow Wolves have been seen on the east road since the Brightfield lanterns failed. Thin their numbers before they reach the walls.",
+   "done": "The road is quieter already. Good work, both of you.",
+   "labels": [
+    "Hollow Wolves slain"
+   ],
+   "zone": "Brightfield"
+  },
+  {
+   "id": "q2",
+   "name": "Moonpetal for the Wounded",
+   "text": "Moonpetal blooms where lantern light once fell. It glows faintly at night. Bring me five and I can brew draughts for the watch, and for you.",
+   "done": "Lovely. These will save lives. Take some draughts for the road.",
+   "labels": [
+    "Moonpetal gathered"
+   ],
+   "zone": "Brightfield"
+  },
+  {
+   "id": "q3",
+   "name": "Thorns in the Field",
+   "text": "Bramble Sprites are spitting thorns at my ore carts in southern Brightfield. Clear five of them and I will make it worth your while.",
+   "done": "Ha! My carts thank you. Here, something from my forge.",
+   "labels": [
+    "Bramble Sprites cleared"
+   ],
+   "zone": "Brightfield"
+  },
+  {
+   "id": "q4",
+   "name": "The Beast at the Shrine",
+   "text": "Something huge nests at the Brightfield shrine, where our first beacon stands cold. Slay it, then relight the beacon. Handan, your pendant should wake the flame.",
+   "done": "I saw the light from here. The road to Murkfen is open. Scout Brannoc waits at the fen camp.",
+   "labels": [
+    "Gnarlback slain",
+    "Brightfield beacon relit"
+   ],
+   "zone": "Brightfield"
+  },
+  {
+   "id": "q5",
+   "name": "The Lost Patrol",
+   "text": "Three of my scouts went into the fog and never came back. Their lantern tokens would tell me where they fell. Find them.",
+   "done": "All three... At least now their families will know. Thank you.",
+   "labels": [
+    "Scout tokens recovered"
+   ],
+   "zone": "Murkfen"
+  },
+  {
+   "id": "q6",
+   "name": "Lights in the Fog",
+   "text": "The wisps lure travelers into the deep water. Put out six of them so my people can move again.",
+   "done": "The fog feels thinner already.",
+   "labels": [
+    "Mire Wisps snuffed"
+   ],
+   "zone": "Murkfen"
+  },
+  {
+   "id": "q7",
+   "name": "Witch of the Fen",
+   "text": "Mirethal sits on the drowned isle in the north-east, feeding the fen to the Hollow. Her death relights the second beacon, and opens the causeway to the Hollow Keep.",
+   "done": "Two beacons burning. Only the First Lantern remains, inside the Hollow Keep. Someone... something waits for you there.",
+   "labels": [
+    "Mirethal slain",
+    "Murkfen beacon relit"
+   ],
+   "zone": "Murkfen"
+  },
+  {
+   "id": "q8",
+   "name": "Breaching the Keep",
+   "text": "I am what is left of the First Lantern's keeper. The Hollow Knights guard every hall. Break four of them so the shards can be reached.",
+   "done": "Their armor was empty all along. Only hate filled it.",
+   "labels": [
+    "Hollow Knights broken"
+   ],
+   "zone": "Hollow Keep"
+  },
+  {
+   "id": "q9",
+   "name": "Shards of the First Lantern",
+   "text": "When the King fell to the Hollow, the First Lantern shattered. Three shards remain in the north, south and east halls. With them, the throne gate will open to your pendant.",
+   "done": "Your pendant sings with them. The throne gate is open now.",
+   "labels": [
+    "Lantern shards found"
+   ],
+   "zone": "Hollow Keep"
+  },
+  {
+   "id": "q10",
+   "name": "The Hollow King",
+   "text": "He was the lantern's guardian once. Now he is its hunger. End him, and relight the First Lantern on the throne dais.",
+   "done": "end",
+   "labels": [
+    "The Hollow King defeated",
+    "The First Lantern relit"
+   ],
+   "zone": "Hollow Keep"
+  },
+  {
+   "id": "q11",
+   "name": "The North Road",
+   "text": "Frost on the north road, in autumn. The wells froze overnight. Liora says the King was only a vessel: the shadow in his crown fled north to Frostspire, where the First Lantern was forged. Go to the pass and find Warden Kael.",
+   "done": "Maren sent you? Then the lowlands are finally listening. Welcome to Frostspire. Stay near the fire when you can, and keep your blades dry.",
+   "labels": [
+    "Reach Frostspire Pass"
+   ],
+   "zone": "Frostspire Pass"
+  },
+  {
+   "id": "q12",
+   "name": "Teeth of the Pass",
+   "text": "The wolves up here were grey once. Now they run white and hungry, and they hunt anything warm. Thin the packs on the lower slopes.",
+   "done": "Good. The supply sledges can move again.",
+   "labels": [
+    "Rimefang Wolves slain"
+   ],
+   "zone": "Frostspire Pass"
+  },
+  {
+   "id": "q13",
+   "name": "Embers in the Ice",
+   "text": "When the forge went cold, its embers scattered and froze. You will see them glowing under the snow. Bring me five and I can keep this camp alive.",
+   "done": "Feel that? Warm. First warm thing up here in a week.",
+   "labels": [
+    "Frozen embers gathered"
+   ],
+   "zone": "Frostspire Pass"
+  },
+  {
+   "id": "q14",
+   "name": "The Frozen Choir",
+   "text": "Hollow Frostcallers chant on the ridge, and Rime Wraiths follow the song. Every verse makes the mountain colder. Silence six of them.",
+   "done": "Quiet at last. I had forgotten what the wind sounds like.",
+   "labels": [
+    "Choir silenced"
+   ],
+   "zone": "Frostspire Pass"
+  },
+  {
+   "id": "q15",
+   "name": "Walls of Ice",
+   "text": "Two Rime Colossi stand guard where the forge road climbs. The ice gate behind them answers only to the old forge-flame, and your pendant carries some of it. Break the guardians.",
+   "done": "The gate is melting. The forge road is yours.",
+   "labels": [
+    "Rime Colossi shattered"
+   ],
+   "zone": "Frostspire Pass"
+  },
+  {
+   "id": "q16",
+   "name": "The Cold Crown",
+   "text": "The shadow from the crown found a body worth having: Vyrmhal, the old wyrm that slept under the forge. Kill it, and relight the Forge of the First Flame. Then Velmara keeps its light for good.",
+   "done": "end",
+   "labels": [
+    "Vyrmhal slain",
+    "The Forge of the First Flame relit"
+   ],
+   "zone": "Frostspire Pass"
+  },
+  {
+   "id": "q17",
+   "name": "Smoke on the West Road",
+   "text": "The forge burns and the north is safe, but smoke rises from the Emberwood beyond the west gate. The leaves are burning without fire. The shadow that wore the Cold Crown has gone west. Find Elder Brannoc at the forest edge.",
+   "done": "Lanternhold sends its two brightest, I see. Good. The wood needs both of you.",
+   "labels": [
+    "Reach the Emberwood"
+   ],
+   "zone": "Emberwood"
+  },
+  {
+   "id": "q18",
+   "name": "Hounds of Cinder",
+   "text": "The wolves of this wood used to sleep under the oaks. Now their fur smoulders and they hunt anything green. Put down eight of them before they burn the eastern groves.",
+   "done": "The eastern groves can breathe again. Thank you.",
+   "labels": [
+    "Cinderhounds slain"
+   ],
+   "zone": "Emberwood"
+  },
+  {
+   "id": "q19",
+   "name": "Heartwood Seeds",
+   "text": "The great trees drop sap-gems when they are dying, the way a hearth drops its last embers. Gather six before the Hollow takes them. With them I can replant what we lose.",
+   "done": "Warm still. These will grow. Everything grows back, if someone cares enough.",
+   "labels": [
+    "Sap-gems gathered"
+   ],
+   "zone": "Emberwood"
+  },
+  {
+   "id": "q20",
+   "name": "The Ashen Choir",
+   "text": "Ash Sprites and Ember-Hollowed Knights gather in the clearings and sing the fire deeper into the roots. Silence eight of them.",
+   "done": "Listen. Birds. I had forgotten the wood had birds.",
+   "labels": [
+    "Choir silenced"
+   ],
+   "zone": "Emberwood"
+  },
+  {
+   "id": "q21",
+   "name": "Brutes at the Heartgrove",
+   "text": "Two Cinder Brutes guard the old gate of the Heartgrove. The gate is grown from living wood and will open for me only when they fall.",
+   "done": "The gate remembers me. It is opening. Go, and be gentle with him if you can.",
+   "labels": [
+    "Cinder Brutes felled"
+   ],
+   "zone": "Emberwood"
+  },
+  {
+   "id": "q22",
+   "name": "The Burning Heart",
+   "text": "Morrowthorn guarded the Heartgrove Lantern for a thousand years. The shadow found him lonely and filled him with fire. Free him, relight the Heartgrove Lantern, and come back to me.",
+   "done": "I felt him go. He was smiling, I think. The shadow ran west again, to the drowned vale. Captain Ysolde holds the last ship there.",
+   "labels": [
+    "Morrowthorn freed",
+    "The Heartgrove Lantern relit"
+   ],
+   "zone": "Emberwood"
+  },
+  {
+   "id": "q23",
+   "name": "Down to the Water",
+   "text": "Past the western roots the land falls into Glasswater Vale, where a whole city sleeps under the sea. Captain Ysolde keeps the last lantern ship moored on the broken bridge. Find her.",
+   "done": "Brannoc's wood smoke came over the hills this morning, and then it stopped. That was you? Welcome aboard. What is left of it.",
+   "labels": [
+    "Reach Glasswater Vale"
+   ],
+   "zone": "Glasswater Vale"
+  },
+  {
+   "id": "q24",
+   "name": "Bells Under the Water",
+   "text": "The Drowned Sentinels were the harbour watch. They still walk their rounds, only now they drag people under. Lay eight of them to rest.",
+   "done": "The bells went quiet. First time in a year.",
+   "labels": [
+    "Drowned Sentinels at rest"
+   ],
+   "zone": "Glasswater Vale"
+  },
+  {
+   "id": "q25",
+   "name": "Tide Pearls",
+   "text": "The old harbour lamps burned on tide pearls. There are still some along the shore, if the crabs have not swallowed them. Six would light my ship for a month.",
+   "done": "Look at that glow. My ship has not been this bright since the fleet sailed.",
+   "labels": [
+    "Tide pearls found"
+   ],
+   "zone": "Glasswater Vale"
+  },
+  {
+   "id": "q26",
+   "name": "The Calling Tide",
+   "text": "Tidecallers sing on the flooded towers and the Glassback Crabs come running. Every song raises the water an inch. Silence eight of them.",
+   "done": "The water dropped a hand's width. You can see the old street signs now.",
+   "labels": [
+    "Tide silenced"
+   ],
+   "zone": "Glasswater Vale"
+  },
+  {
+   "id": "q27",
+   "name": "Wardens of the Cathedral",
+   "text": "Two Reef Colossi guard the Drowned Cathedral where the Tidelight sits. The sea gate will not move while they stand.",
+   "done": "The sea gate is rising. Whatever waits in there is waiting for you.",
+   "labels": [
+    "Reef Colossi broken"
+   ],
+   "zone": "Glasswater Vale"
+  },
+  {
+   "id": "q28",
+   "name": "The Drowned Wyrm",
+   "text": "Thalassar was Vyrmhal's sister. Where he took the cold, she took the sea. The shadow is coiled around her heart. End her, relight the Tidelight and come back to the ship.",
+   "done": "The tide is going out. All of it. There is one place left where the dark can hide: north, past the vale, where the stars used to be. The Starwatch keeps a seer there. Maelis.",
+   "labels": [
+    "Thalassar slain",
+    "The Tidelight relit"
+   ],
+   "zone": "Glasswater Vale"
+  },
+  {
+   "id": "q29",
+   "name": "Where the Stars Went",
+   "text": "North of the vale the road climbs into the Starless Crown, the old observatory of the Starwatch. Seer Maelis is the last of them. She has been waiting for someone carrying the First Lantern.",
+   "done": "There you are. I saw your light coming up the road for three nights. You are later than the stars said, but not by much.",
+   "labels": [
+    "Reach the Starless Crown"
+   ],
+   "zone": "The Starless Crown"
+  },
+  {
+   "id": "q30",
+   "name": "Wraiths of the Watch",
+   "text": "My brothers and sisters of the Starwatch drift through the halls as Starless Wraiths. They drink warmth from anything living. Give eight of them peace.",
+   "done": "I knew some of their names. Thank you for being quick.",
+   "labels": [
+    "Wraiths given peace"
+   ],
+   "zone": "The Starless Crown"
+  },
+  {
+   "id": "q31",
+   "name": "Fallen Starlight",
+   "text": "When the stars went out, pieces of them fell here as star-shards. Each still holds a little light. Bring me six and I can show you the Sovereign's weakness.",
+   "done": "There. Look in the shards. The Sovereign fears one thing: two lights burning as one. You already know how to do that.",
+   "labels": [
+    "Star-shards gathered"
+   ],
+   "zone": "The Starless Crown"
+  },
+  {
+   "id": "q32",
+   "name": "The Fallen Host",
+   "text": "Starfallen Knights and Umbral Archers hold the terraces below the throne. Break their line: eight of them.",
+   "done": "The terraces are open. One gate left.",
+   "labels": [
+    "Fallen host broken"
+   ],
+   "zone": "The Starless Crown"
+  },
+  {
+   "id": "q33",
+   "name": "The Throne Gate",
+   "text": "Two Void Colossi stand before the throne gate. They were carved to hold the sky up. Now they hold the dark in.",
+   "done": "The gate is open. Whatever you two have, take all of it with you.",
+   "labels": [
+    "Void Colossi toppled"
+   ],
+   "zone": "The Starless Crown"
+  },
+  {
+   "id": "q34",
+   "name": "The Last Lantern",
+   "text": "Nyxara, the Hollow Sovereign, waits on the throne of the Starwatch. Every lantern you relit pushed the dark here, into one place. End it, and light the First Lantern under the open sky.",
+   "done": "end",
+   "labels": [
+    "The Hollow Sovereign defeated",
+    "The First Lantern raised"
+   ],
+   "zone": "The Starless Crown"
+  },
+  {
+   "id": "q35",
+   "name": "The Hollow Sun",
+   "text": "The stars came back, Orhun, but when the dark broke something else woke: a Hollow Sun over the southern desert. It burns beacons from the sky down. Go south through Brightfield and find Wayfinder Talia at the edge of the Sunscar Dunes.",
+   "done": "Liora sent you? Then the sky really is falling. Welcome to the Sunscar. Mind the sand, it moves.",
+   "labels": [
+    "Reach Sunscar Dunes"
+   ],
+   "zone": "Sunscar Dunes"
+  },
+  {
+   "id": "q36",
+   "name": "Stalkers in the Sand",
+   "text": "Sandstalkers hunt the dune roads at night and drag whole caravans under. Break eight of them so my people can travel again.",
+   "done": "The caravan bells are ringing again. That is the sound of people coming home.",
+   "labels": [
+    "Sandstalkers slain"
+   ],
+   "zone": "Sunscar Dunes"
+  },
+  {
+   "id": "q37",
+   "name": "Pieces of the Sun",
+   "text": "When the Hollow Sun rose, it shed burning sun-shards across the dunes. Gather six before they set the oasis alight.",
+   "done": "Careful, they are still warm. With these I can light the way for the caravans.",
+   "labels": [
+    "Sun-shards gathered"
+   ],
+   "zone": "Sunscar Dunes"
+  },
+  {
+   "id": "q38",
+   "name": "The Sunpriest Choir",
+   "text": "Dune Wraiths and Hollow Sunpriests sing to the Hollow Sun at the old temples. Silence eight of them.",
+   "done": "The sky looks a little less red tonight. Thank you.",
+   "labels": [
+    "Foes of the Sunscar Dunes defeated"
+   ],
+   "zone": "Sunscar Dunes"
+  },
+  {
+   "id": "q39",
+   "name": "Colossi at the Temple",
+   "text": "Two Sand Colossi guard the gate to the Sunwell temple. Topple them and the gate will open for anyone carrying the First Lantern.",
+   "done": "The temple gate is grinding open. The Sand Queen waits inside.",
+   "labels": [
+    "Sand Colossis broken"
+   ],
+   "zone": "Sunscar Dunes"
+  },
+  {
+   "id": "q40",
+   "name": "The Sand Queen",
+   "text": "Sekhmar, the Sand Queen, swallowed the Sunwell's flame and grew fat on it. End her, relight the Sunwell, and come back to me.",
+   "done": "The Sunwell burns clean again. The Hollow Sun's light fell east, into the Thornveil. Druid Oren keeps the jungle road; tell him I sent you.",
+   "labels": [
+    "Sekhmar defeated",
+    "The Sunwell relit"
+   ],
+   "zone": "Sunscar Dunes"
+  },
+  {
+   "id": "q41",
+   "name": "Into the Thornveil",
+   "text": "East of the dunes, the Hollow Sun's light fell into the Thornveil and the jungle began to grow teeth. Find Druid Oren where the jungle road begins.",
+   "done": "Talia still sends me strays, I see. Good strays, this time. Welcome to the Thornveil.",
+   "labels": [
+    "Reach Thornveil"
+   ],
+   "zone": "Thornveil"
+  },
+  {
+   "id": "q42",
+   "name": "Teeth in the Green",
+   "text": "The Vinehounds were jungle dogs once. Now they are more thorn than fur. Thin the packs: eight of them.",
+   "done": "Quieter. The birds are coming back to the low branches.",
+   "labels": [
+    "Vinehounds slain"
+   ],
+   "zone": "Thornveil"
+  },
+  {
+   "id": "q43",
+   "name": "Dew Lotuses",
+   "text": "Dew lotuses only open under clean moonlight. Pick six and I can brew a draught that heals what the thorns poison.",
+   "done": "Lovely. Hold one up to the light. That is what this jungle is supposed to look like.",
+   "labels": [
+    "Dew lotuses picked"
+   ],
+   "zone": "Thornveil"
+  },
+  {
+   "id": "q44",
+   "name": "The Overgrown Watch",
+   "text": "Bloom Sprites and Moss-Grown Knights hold the old watchtowers. Break eight of them.",
+   "done": "The towers are ours again. I can see the canopy from up there.",
+   "labels": [
+    "Foes of the Thornveil defeated"
+   ],
+   "zone": "Thornveil"
+  },
+  {
+   "id": "q45",
+   "name": "Brutes at the Root Gate",
+   "text": "Two Thorn Brutes guard the Root Gate. The gate is alive; it will open for you once its wardens fall.",
+   "done": "The Root Gate is opening. Be gentle with her if you can. Be quick if you cannot.",
+   "labels": [
+    "Thorn Brutes broken"
+   ],
+   "zone": "Thornveil"
+  },
+  {
+   "id": "q46",
+   "name": "The Rootmother",
+   "text": "Verdigris, the Rootmother, wants to grow a wall of thorns over every lantern in Velmara. End her, relight the Verdant Lantern, and return to me.",
+   "done": "The jungle is breathing again. But the roots told me where the Hollow went: down, into the Cindermaw. Forgemaster Garrick is still there.",
+   "labels": [
+    "Verdigris defeated",
+    "The Verdant Lantern relit"
+   ],
+   "zone": "Thornveil"
+  },
+  {
+   "id": "q47",
+   "name": "Down into the Fire",
+   "text": "The roots led the Hollow down into the Cindermaw, the volcano where the lantern-smiths worked. Forgemaster Garrick never left his forge. Find him.",
+   "done": "Two of you, and a fox. The roots really are desperate. Come in, get warm. Well, warmer.",
+   "labels": [
+    "Reach Cindermaw Caldera"
+   ],
+   "zone": "Cindermaw Caldera"
+  },
+  {
+   "id": "q48",
+   "name": "Magma Hounds",
+   "text": "Magma Hounds circle my forge every night. Put eight of them down before they chew through the bellows.",
+   "done": "Good. I can hear myself hammer again.",
+   "labels": [
+    "Magma Hounds slain"
+   ],
+   "zone": "Cindermaw Caldera"
+  },
+  {
+   "id": "q49",
+   "name": "Ember-glass",
+   "text": "Ember-glass forms where lava meets the cold. Bring me six pieces; I will need them for what comes next.",
+   "done": "Perfect. Sharp, bright and hot. My favourite kind of rock.",
+   "labels": [
+    "Ember-glass collected"
+   ],
+   "zone": "Cindermaw Caldera"
+  },
+  {
+   "id": "q50",
+   "name": "The Ash Choir",
+   "text": "Ashcallers and Cinder Knights guard the lava paths and sing the mountain angry. Silence eight of them.",
+   "done": "The mountain is grumbling less. That is as calm as it gets here.",
+   "labels": [
+    "Foes of the Cindermaw Caldera defeated"
+   ],
+   "zone": "Cindermaw Caldera"
+  },
+  {
+   "id": "q51",
+   "name": "Obsidian Wardens",
+   "text": "Two Obsidian Colossi guard the gate to the Heartforge. Break them and the gate will melt.",
+   "done": "The gate is down. Ignivar is inside, sitting on my forge like a chicken on an egg.",
+   "labels": [
+    "Obsidian Colossis broken"
+   ],
+   "zone": "Cindermaw Caldera"
+  },
+  {
+   "id": "q52",
+   "name": "The Ash Wyrm",
+   "text": "Ignivar is the youngest of Vyrmhal's brood, and he is forging a crown of shadow in my Heartforge. End him, relight the Heartforge, and come back.",
+   "done": "The Heartforge sings again. But the crown is gone: it was carried up, into the sky, to the Skyreach Spires. Aeromancer Selene watches the winds there.",
+   "labels": [
+    "Ignivar defeated",
+    "The Heartforge relit"
+   ],
+   "zone": "Cindermaw Caldera"
+  },
+  {
+   "id": "q53",
+   "name": "Up into the Sky",
+   "text": "The shadow crown was carried up the old sky-stairs to the Skyreach Spires, islands that float above the storm. Aeromancer Selene keeps watch there.",
+   "done": "Visitors! Real ones, with feet! Welcome to the Spires. Do not walk off the edges.",
+   "labels": [
+    "Reach Skyreach Spires"
+   ],
+   "zone": "Skyreach Spires"
+  },
+  {
+   "id": "q54",
+   "name": "Sentinels of the Spires",
+   "text": "The Skyreach Sentinels guarded these islands for the Starwatch. The Hollow turned them. Lay eight of them to rest.",
+   "done": "Thank you. They were good guards, once. They deserved better.",
+   "labels": [
+    "Skyreach Sentinels slain"
+   ],
+   "zone": "Skyreach Spires"
+  },
+  {
+   "id": "q55",
+   "name": "Storm Feathers",
+   "text": "The great storm-birds shed feathers that still crackle with lightning. Catch six for me before the wind carries them off.",
+   "done": "Wonderful. With these I can calm the winds around the Herald's island.",
+   "labels": [
+    "Storm feathers caught"
+   ],
+   "zone": "Skyreach Spires"
+  },
+  {
+   "id": "q56",
+   "name": "Gale and Spark",
+   "text": "Gale Wisps and Storm Sprites ride the winds and feed the Herald's storm. Silence eight of them.",
+   "done": "The winds are softer. I can hear birds again, real ones.",
+   "labels": [
+    "Foes of the Skyreach Spires defeated"
+   ],
+   "zone": "Skyreach Spires"
+  },
+  {
+   "id": "q57",
+   "name": "Storm Colossi",
+   "text": "Two Storm Colossi hold the bridge to the Herald's island. Break them and the wind-gate will open.",
+   "done": "The wind-gate is open. Zephyrion waits with the crown. Hold on to each other.",
+   "labels": [
+    "Storm Colossis broken"
+   ],
+   "zone": "Skyreach Spires"
+  },
+  {
+   "id": "q58",
+   "name": "The Storm Herald",
+   "text": "Zephyrion means to carry the shadow crown to the Dawnless Gate at the edge of the world. Stop him, relight the Stormlantern, and come back to me.",
+   "done": "The storm is breaking. And there, past the clouds: the Dawnless Gate. Liora is waiting for you on the other side.",
+   "labels": [
+    "Zephyrion defeated",
+    "The Stormlantern relit"
+   ],
+   "zone": "Skyreach Spires"
+  },
+  {
+   "id": "q59",
+   "name": "The Edge of the World",
+   "text": "Past the storm lies the Dawnless Gate, where night itself began. Liora went ahead of you. Go to her.",
+   "done": "You came. Of course you came. This is where every Hollow was born, and where it ends.",
+   "labels": [
+    "Reach The Dawnless Gate"
+   ],
+   "zone": "The Dawnless Gate"
+  },
+  {
+   "id": "q60",
+   "name": "Hounds of the First Night",
+   "text": "Umbral Hounds run the black fields before the Gate. Clear eight of them so we can reach the stair.",
+   "done": "The stair is clear. I can almost feel the morning on the other side.",
+   "labels": [
+    "Umbral Hounds slain"
+   ],
+   "zone": "The Dawnless Gate"
+  },
+  {
+   "id": "q61",
+   "name": "Shards of Dawn",
+   "text": "Every sunrise that never came left a shard of itself here. Find six dawn-shards; together with the lanterns you lit, they will be enough.",
+   "done": "Look at them. Three hundred years of mornings, waiting for you.",
+   "labels": [
+    "Dawn-shards found"
+   ],
+   "zone": "The Dawnless Gate"
+  },
+  {
+   "id": "q62",
+   "name": "The Last Host",
+   "text": "Hollow Heralds and Dawnless Titans stand on the stair. Break eight of them.",
+   "done": "The host is broken. Only the echoes remain.",
+   "labels": [
+    "Foes of the Dawnless Gate defeated"
+   ],
+   "zone": "The Dawnless Gate"
+  },
+  {
+   "id": "q63",
+   "name": "Echoes of the King",
+   "text": "Two echoes of the Hollow King guard the Gate, shadows of a shadow. Free them, and the Gate will open.",
+   "done": "The Gate is open. Umbrath waits. Whatever happens, hold each other's hands.",
+   "labels": [
+    "Echoes of the Hollow Kings broken"
+   ],
+   "zone": "The Dawnless Gate"
+  },
+  {
+   "id": "q64",
+   "name": "The First Shadow",
+   "text": "Umbrath, the First Shadow, is the night that swallowed Velmara. Break him, and raise the Dawn Lantern at the top of the stair.",
+   "done": "end",
+   "labels": [
+    "Umbrath defeated",
+    "The Dawn Lantern relit"
+   ],
+   "zone": "The Dawnless Gate"
+  }
+ ],
+ "banter": {
+  "intro": [
+   [
+    "handan",
+    "The lanterns on the east road went dark again last night. That makes nine."
+   ],
+   [
+    "orhun",
+    "Then we light them again. That is the whole plan, right?"
+   ],
+   [
+    "handan",
+    "You stand in front and hit things. I keep you standing. Lumen judges everyone."
+   ],
+   [
+    "orhun",
+    "Fair division of labor. Let's go see Elder Maren before she sends someone to drag us."
+   ]
+  ],
+  "Brightfield": [
+   [
+    "orhun",
+    "Smells like rain and wolves out here."
+   ],
+   [
+    "handan",
+    "Lumen doesn't like it either. Her tail is all puffed up."
+   ]
+  ],
+  "Murkfen": [
+   [
+    "handan",
+    "My pendant is warm. Something in this fen remembers the First Lantern."
+   ],
+   [
+    "orhun",
+    "Mud up to my knees and a haunted swamp. You take me to the nicest places."
+   ],
+   [
+    "handan",
+    "You said you wanted to travel more."
+   ]
+  ],
+  "Hollow Keep": [
+   [
+    "orhun",
+    "Whatever happens in there..."
+   ],
+   [
+    "handan",
+    "...we walk out together. Say it properly."
+   ],
+   [
+    "orhun",
+    "We walk out together."
+   ]
+  ],
+  "gnarl": [
+   [
+    "orhun",
+    "That is not a boar. That is a hill with tusks."
+   ],
+   [
+    "handan",
+    "Then be a taller hill. I'll handle the healing."
+   ]
+  ],
+  "witch": [
+   [
+    "witch",
+    "Two little candles, wading into my fen. I will drink your light slowly."
+   ],
+   [
+    "handan",
+    "Orhun, keep her eyes on you. I'll deal with the puddles."
+   ]
+  ],
+  "king": [
+   [
+    "king",
+    "The lantern-bearer returns. Give me the shard, child, and I will make the dark painless."
+   ],
+   [
+    "orhun",
+    "She said no. I'm saying it louder."
+   ],
+   [
+    "handan",
+    "When the pendant wakes, I'll need everything you have left. Stay close."
+   ]
+  ],
+  "Frostspire Pass": [
+   [
+    "handan",
+    "My breath is freezing. And the pendant... it's cold, Orhun. It's never been cold."
+   ],
+   [
+    "orhun",
+    "Then we find the forge and warm it up again. Stay close to me."
+   ],
+   [
+    "handan",
+    "Closer than that and you'll have to carry me."
+   ],
+   [
+    "orhun",
+    "Wouldn't be the first time."
+   ]
+  ],
+  "ch2": [
+   [
+    "handan",
+    "Orhun. The pendant is cold again. The light didn't stay."
+   ],
+   [
+    "orhun",
+    "Then it isn't over. Let's hear what Elder Maren knows."
+   ]
+  ],
+  "wyrm": [
+   [
+    "wyrm",
+    "Little flames. The crown told me of you. It said you would be... smaller."
+   ],
+   [
+    "orhun",
+    "Funny. The King said something like that too."
+   ],
+   [
+    "handan",
+    "Watch the breath! Get out of the blue when it glows!"
+   ]
+  ],
+  "b4": [
+   [
+    "handan",
+    "The forge is singing. I can hear it in the pendant."
+   ],
+   [
+    "orhun",
+    "Every lantern in Velmara is going to feel that."
+   ]
+  ],
+  "b1": [
+   [
+    "handan",
+    "It's warm. The flame knows the pendant."
+   ],
+   [
+    "orhun",
+    "One down. Look at that light."
+   ]
+  ],
+  "b2": [
+   [
+    "orhun",
+    "Two beacons. I can see Lanternhold's glow from here."
+   ],
+   [
+    "handan",
+    "The Keep is next. I can feel it pulling."
+   ]
+  ],
+  "levelup": [
+   [
+    "orhun",
+    "Getting stronger. Feels good."
+   ],
+   [
+    "handan",
+    "I learned something new. Remind me to show you."
+   ],
+   [
+    "orhun",
+    "Was that a level? That was a level."
+   ],
+   [
+    "handan",
+    "Lumen's getting cocky. I blame you."
+   ]
+  ],
+  "lowhp": [
+   [
+    "handan",
+    "Orhun! Back up, I've got you!"
+   ],
+   [
+    "orhun",
+    "Handan, behind you!"
+   ]
+  ],
+  "ch3": [
+   [
+    "handan",
+    "Do you smell that? Smoke, from the west road."
+   ],
+   [
+    "orhun",
+    "The Emberwood. Maren says nobody goes there any more."
+   ],
+   [
+    "handan",
+    "Then somebody should. Let us talk to her."
+   ]
+  ],
+  "Emberwood": [
+   [
+    "orhun",
+    "The leaves are burning, but nothing is on fire."
+   ],
+   [
+    "handan",
+    "It is the Hollow. It wears the forest like a cloak."
+   ],
+   [
+    "orhun",
+    "Stay close. I do not like the way those trees are looking at us."
+   ]
+  ],
+  "morrow": [
+   [
+    "morrow",
+    "Little lanterns... my roots remember light. They remember it hurting."
+   ],
+   [
+    "handan",
+    "You were a guardian once, like the King. Let us end this gently."
+   ],
+   [
+    "orhun",
+    "Gently. Right. Watch the ember rain!"
+   ]
+  ],
+  "b5": [
+   [
+    "handan",
+    "The Heartgrove Lantern. It smells like spring."
+   ],
+   [
+    "orhun",
+    "Brannoc will want to hear it from us."
+   ]
+  ],
+  "Glasswater Vale": [
+   [
+    "handan",
+    "A whole city under the water. Look at the spires."
+   ],
+   [
+    "orhun",
+    "Watch your step. I am not fishing you out of a lake."
+   ],
+   [
+    "handan",
+    "You would, though."
+   ],
+   [
+    "orhun",
+    "...I would."
+   ]
+  ],
+  "tide": [
+   [
+    "tide",
+    "The deep keeps everything it takes. It will keep you too."
+   ],
+   [
+    "orhun",
+    "Not today."
+   ],
+   [
+    "handan",
+    "Get off the surge line when it lights up!"
+   ]
+  ],
+  "b6": [
+   [
+    "handan",
+    "The Tidelight. One dark lantern left in the whole world."
+   ],
+   [
+    "orhun",
+    "One. Then we go home."
+   ]
+  ],
+  "The Starless Crown": [
+   [
+    "handan",
+    "No stars. Not one."
+   ],
+   [
+    "orhun",
+    "Then we brought our own."
+   ],
+   [
+    "handan",
+    "That was almost poetic."
+   ],
+   [
+    "orhun",
+    "Do not tell anyone."
+   ]
+  ],
+  "sovereign": [
+   [
+    "sovereign",
+    "I am the dark between every lantern you lit. Every flame you kindled only made my shadow longer."
+   ],
+   [
+    "handan",
+    "Then we will burn until there is no shadow left."
+   ],
+   [
+    "orhun",
+    "Together. Like always."
+   ]
+  ],
+  "sovereign3": [
+   [
+    "handan",
+    "Orhun, the pendant... it is answering! It wants both of us!"
+   ],
+   [
+    "orhun",
+    "Then take my hand. Lanternburst, together!"
+   ]
+  ],
+  "Sunscar Dunes": [
+   [
+    "handan",
+    "It is so hot, even at night."
+   ],
+   [
+    "orhun",
+    "Look at the sky. That sun is not ours."
+   ],
+   [
+    "handan",
+    "Then we put it out."
+   ]
+  ],
+  "scorpqueen": [
+   [
+    "scorpqueen",
+    "Tiny lights in my desert. I will bury you with the caravans."
+   ],
+   [
+    "orhun",
+    "Watch the tail!"
+   ],
+   [
+    "handan",
+    "Stay out of the burning circles!"
+   ]
+  ],
+  "b8": [
+   [
+    "handan",
+    "The Sunwell. Feel that? Real warmth."
+   ],
+   [
+    "orhun",
+    "One sun down. Talia will want to hear it."
+   ]
+  ],
+  "Thornveil": [
+   [
+    "handan",
+    "Everything here is green. Even the dark is green."
+   ],
+   [
+    "orhun",
+    "And everything here wants to eat us."
+   ],
+   [
+    "handan",
+    "Not everything. Look, fireflies."
+   ]
+  ],
+  "rootmother": [
+   [
+    "rootmother",
+    "Little sparks... I will grow over you like I grew over the old road."
+   ],
+   [
+    "handan",
+    "Watch the roots under your feet!"
+   ],
+   [
+    "orhun",
+    "Dodge out of the snares. I mean it."
+   ]
+  ],
+  "b9": [
+   [
+    "handan",
+    "The Verdant Lantern. It glows green, like the pendant."
+   ],
+   [
+    "orhun",
+    "Like you, then."
+   ]
+  ],
+  "Cindermaw Caldera": [
+   [
+    "orhun",
+    "Mind the lava. Do not touch the lava. I am serious."
+   ],
+   [
+    "handan",
+    "I was not going to touch the lava, Orhun."
+   ],
+   [
+    "orhun",
+    "You touched the frozen lake."
+   ]
+  ],
+  "ignivar": [
+   [
+    "ignivar",
+    "My brother froze. My sister drowned. I will burn."
+   ],
+   [
+    "handan",
+    "He breathes fire in lines! Stay off them!"
+   ],
+   [
+    "orhun",
+    "Then let us end the family business."
+   ]
+  ],
+  "b10": [
+   [
+    "handan",
+    "The Heartforge. It is singing the same song as the First Flame."
+   ],
+   [
+    "orhun",
+    "Garrick will cry. Do not tell him I said that."
+   ]
+  ],
+  "Skyreach Spires": [
+   [
+    "handan",
+    "Orhun, we are above the clouds. Actually above them."
+   ],
+   [
+    "orhun",
+    "Do not look down. Do not look down."
+   ],
+   [
+    "handan",
+    "You looked down."
+   ]
+  ],
+  "zephyrion": [
+   [
+    "zephyrion",
+    "Every storm that ever broke over Velmara was me. You are two candles in a gale."
+   ],
+   [
+    "orhun",
+    "Lightning on the ground! Move!"
+   ],
+   [
+    "handan",
+    "Candles burn longer than storms."
+   ]
+  ],
+  "b11": [
+   [
+    "handan",
+    "The Stormlantern. The wind is singing."
+   ],
+   [
+    "orhun",
+    "One more. Just one more."
+   ]
+  ],
+  "The Dawnless Gate": [
+   [
+    "handan",
+    "Everything is red. Like the sky is bleeding."
+   ],
+   [
+    "orhun",
+    "Then we close the wound."
+   ],
+   [
+    "handan",
+    "Together?"
+   ],
+   [
+    "orhun",
+    "Always."
+   ]
+  ],
+  "umbrath": [
+   [
+    "umbrath",
+    "I was here before the first lantern. I will be here after the last."
+   ],
+   [
+    "handan",
+    "Not after this one."
+   ],
+   [
+    "orhun",
+    "Stay close to me, Handan."
+   ]
+  ],
+  "b12": [
+   [
+    "handan",
+    "The Dawn Lantern..."
+   ],
+   [
+    "orhun",
+    "Look east."
+   ]
+  ],
+  "umbrath3": [
+   [
+    "handan",
+    "Orhun! Every lantern we ever lit is answering! I can feel all of them!"
+   ],
+   [
+    "orhun",
+    "Then we light the last one together. Hold on to me!"
+   ]
+  ],
+  "ch6": [
+   [
+    "handan",
+    "Orhun... the sky to the south. Is that a sunrise?"
+   ],
+   [
+    "orhun",
+    "No. That light is wrong. Too red."
+   ],
+   [
+    "handan",
+    "Liora will know. Let us find her."
+   ]
+  ]
+ },
+ "talk": {
+  "maren": [
+   "Lanternhold has stood for three hundred winters. It will stand for one more.",
+   "Keep your pendant close, Handan. It remembers more than any of us."
+  ],
+  "sela": [
+   "A draught a day keeps the Hollow away. Mostly.",
+   "If you see moonpetal, pick it gently. It bruises."
+  ],
+  "dorrak": [
+   "Steel or potions, I have both. Coin first.",
+   "Bring me what you find out there. I buy anything that is not cursed. Mostly."
+  ],
+  "taner": [
+   "Stay on the dry paths. The water here has teeth.",
+   "My scouts were good people. Every one of them."
+  ],
+  "ayla": [
+   "I kept the light for two hundred years. I can keep it a little longer.",
+   "The pendant chose her, you know. It does not choose lightly."
+  ],
+  "kael": [
+   "Keep moving up here. Standing still is how the cold gets you.",
+   "Twenty years on this pass. Never seen the forge-smoke stop. Until now.",
+   "If you hear singing on the ridge, do not follow it."
+  ],
+  "brannoc": [
+   "The trees here are older than Lanternhold. They remember the first flame. Some of them remember it too well.",
+   "Burning without fire. That is the Hollow's way. It takes what a thing loves and makes it hunger.",
+   "Walk softly near the Heartgrove. Morrowthorn was my friend, once."
+  ],
+  "ysolde": [
+   "Glasswater was a harbour city. The sea came in one night and never left.",
+   "My ship is the only one that still flies the lantern. Fleet of one. Very exclusive.",
+   "If you hear bells under the water, run. The drowned ring them when they are hungry."
+  ],
+  "maelis": [
+   "The Starwatch counted every star over Velmara for three hundred years. Then one night we had nothing left to count.",
+   "The Sovereign is not a creature. It is the dark between your lanterns, given a will.",
+   "You two carry more light than you know. I can see it from here."
+  ],
+  "talia": [
+   "Drink before you are thirsty. The desert does not give second chances.",
+   "The Sunwell kept the caravans alive for a thousand years. Now it only burns.",
+   "You two travel like people who have done this before."
+  ],
+  "oren": [
+   "Every thorn here was a flower once. The Hollow teaches things to bite.",
+   "Walk where the moss is soft. The roots listen.",
+   "Your fox is welcome here. The jungle likes Lumen better than it likes me."
+  ],
+  "garrick": [
+   "Mind the lava. It does not care how brave you are.",
+   "I forged lanterns for this whole country. Now I forge excuses.",
+   "Whatever the Hollow is making in my forge, it is not a horseshoe."
+  ],
+  "selene": [
+   "Do not look down. Or do, the view is the best part.",
+   "The wind up here remembers every storm. Zephyrion is all of them at once.",
+   "Hold on to each other in the gusts. That is not a metaphor."
+  ],
+  "lioraflame": [
+   "I have waited three hundred years for this night to end.",
+   "All the lanterns you lit are holding the door open for us.",
+   "The First Lantern chose well. It chose both of you."
+  ]
+ },
+ "npcTitles": {
+  "maren": "Keeper of Lanternhold",
+  "sela": "Herbalist",
+  "dorrak": "Smith & Trader",
+  "taner": "Ember Road Watch",
+  "ayla": "Spirit of the First Lantern",
+  "kael": "Keeper of the Pass",
+  "brannoc": "Warden of the Old Wood",
+  "ysolde": "Last Ship of the Lantern Fleet",
+  "maelis": "Last of the Starwatch",
+  "talia": "Guide of the Sunscar caravans",
+  "oren": "Keeper of the Thornveil",
+  "garrick": "Last smith of the Cindermaw",
+  "selene": "Warden of the Skyreach",
+  "lioraflame": "Spirit of the First Lantern"
+ },
+ "foes": {
+  "wolf": "Hollow Wolf",
+  "sprite": "Bramble Sprite",
+  "alpha": "Ashmane Alpha",
+  "pup": "Hollow Whelp",
+  "gnarl": "Gnarlback",
+  "lurker": "Bog Lurker",
+  "wisp": "Mire Wisp",
+  "spider": "Fen Spider",
+  "hulk": "Mire Hulk",
+  "mireling": "Mireling",
+  "witch": "Mirethal, the Fen Witch",
+  "knight": "Hollow Knight",
+  "archer": "Shade Archer",
+  "wraith": "Lantern Wraith",
+  "king": "The Hollow King",
+  "frostwolf": "Rimefang Wolf",
+  "frostcaller": "Hollow Frostcaller",
+  "rimewraith": "Rime Wraith",
+  "golem": "Rime Colossus",
+  "rimeling": "Rimeling",
+  "wyrm": "Vyrmhal, the Cold Crown",
+  "orb": "Shadow Orb",
+  "cinderhound": "Cinderhound",
+  "ashsprite": "Ash Sprite",
+  "emberknight": "Ember-Hollowed Knight",
+  "cinderbrute": "Cinder Brute",
+  "morrow": "Morrowthorn, the Burning Heart",
+  "drowned": "Drowned Sentinel",
+  "tidecaller": "Tidecaller",
+  "glasscrab": "Glassback Crab",
+  "reefgolem": "Reef Colossus",
+  "tide": "Thalassar, the Drowned Wyrm",
+  "voidwraith": "Starless Wraith",
+  "starknight": "Starfallen Knight",
+  "umbral": "Umbral Archer",
+  "voidcolossus": "Void Colossus",
+  "sovereign": "Nyxara, the Hollow Sovereign",
+  "sandstalker": "Sandstalker",
+  "dunewraith": "Dune Wraith",
+  "sunpriest": "Hollow Sunpriest",
+  "sandgolem": "Sand Colossus",
+  "scorpqueen": "Sekhmar, the Sand Queen",
+  "vinehound": "Vinehound",
+  "bloomsprite": "Bloom Sprite",
+  "mossknight": "Moss-Grown Knight",
+  "thornbrute": "Thorn Brute",
+  "rootmother": "Verdigris, the Rootmother",
+  "magmahound": "Magma Hound",
+  "ashcaller": "Ashcaller",
+  "cinderknight": "Cinder Knight",
+  "obsidiangolem": "Obsidian Colossus",
+  "ignivar": "Ignivar, the Ash Wyrm",
+  "galewisp": "Gale Wisp",
+  "skyknight": "Skyreach Sentinel",
+  "stormsprite": "Storm Sprite",
+  "stormgolem": "Storm Colossus",
+  "zephyrion": "Zephyrion, the Storm Herald",
+  "umbralhound": "Umbral Hound",
+  "hollowherald": "Hollow Herald",
+  "gravetitan": "Dawnless Titan",
+  "echoknight": "Echo of the Hollow King",
+  "umbrath": "Umbrath, the First Shadow"
+ },
+ "skills": {
+  "sunder": [
+   "Sunder",
+   "A heavy strike for <b>#</b> damage. Generates # rage and a lot of threat.",
+   "Duelist"
+  ],
+  "roar": [
+   "Challenging Roar",
+   "Taunt every enemy within # yards for #s and weaken them (−#% damage) for #s. Pulls aggro off Handan.",
+   "Guardian"
+  ],
+  "whirl": [
+   "Whirling Blades",
+   "Spin and hit every enemy within # yards for <b>#</b> damage. Good threat on packs.",
+   "Berserker"
+  ],
+  "ironhide": [
+   "Ironhide Parry",
+   "For #s take #% less damage and riposte each melee hit for <b>#</b>.",
+   "Guardian"
+  ],
+  "exec": [
+   "Executioner's Edge",
+   "A finishing blow for <b>#</b> damage, doubled against enemies under #% health.",
+   "Duelist"
+  ],
+  "charge": [
+   "Shoulder Charge",
+   "Rush an enemy up to # yards away, stunning it for #s and dealing <b>#</b> damage.",
+   "Duelist"
+  ],
+  "crescent": [
+   "Crescent Wave",
+   "Send a crescent of steel through every enemy in a line for <b>#</b> damage.",
+   "Duelist"
+  ],
+  "frenzy": [
+   "Blood Frenzy",
+   "For #s Orhun attacks #% faster and deals #% more damage, but takes #% more.",
+   "Berserker"
+  ],
+  "oath": [
+   "Guardian's Oath",
+   "For #s Handan takes #% less damage and Orhun #% less. Every enemy attacking Handan turns on Orhun.",
+   "Guardian"
+  ],
+  "quake": [
+   "Earthsplitter",
+   "Leap at an enemy and smash the ground: <b>#</b> damage to everything within # yards and a #s stun.",
+   "Berserker"
+  ],
+  "dance": [
+   "Blade Dance",
+   "Five lightning cuts for <b>#</b> each. Attacks pass through Orhun while he dances.",
+   "Duelist"
+  ],
+  "banner": [
+   "Rallying Banner",
+   "Plant a banner for #s. Heroes near it heal #% of their health every second and take #% less damage.",
+   "Guardian"
+  ],
+  "bolt": [
+   "Jade Bolt",
+   "Hurl a bolt of jade fire for <b>#</b> damage.",
+   "Arcanist"
+  ],
+  "thorn": [
+   "Thornbind",
+   "Roots the enemy in place for #s and deals <b>#</b> damage over the duration.",
+   "Arcanist"
+  ],
+  "mend": [
+   "Mending Light",
+   "Heal an ally for <b>#</b> + #% of their max health. Targets the most wounded hero if you have no friendly target.",
+   "Archmage"
+  ],
+  "wither": [
+   "Wither Hex",
+   "Curse an enemy: <b>#</b> damage over #s and it deals #% less damage.",
+   "Arcanist"
+  ],
+  "ward": [
+   "Jade Ward",
+   "Shield an ally, absorbing <b>#</b> damage for #s. Defaults to Orhun.",
+   "Archmage"
+  ],
+  "fire": [
+   "Lanternfire",
+   "Call down lantern flame on the target, burning all enemies within # yards for <b>#</b> plus a short burn.",
+   "Arcanist"
+  ],
+  "barrage": [
+   "Arcane Barrage",
+   "Fire # jade missiles split between nearby enemies, <b>#</b> each.",
+   "Arcanist"
+  ],
+  "renewal": [
+   "Renewal",
+   "Both heroes heal <b>#</b> + #% of their health over #s.",
+   "Archmage"
+  ],
+  "chain": [
+   "Chain Lightning",
+   "Lightning strikes an enemy for <b>#</b> and jumps to # more, losing #% each jump.",
+   "Arcanist"
+  ],
+  "nova": [
+   "Frost Nova",
+   "Freeze every enemy within # yards in place for #s and deal <b>#</b> damage.",
+   "Arcanist"
+  ],
+  "haste": [
+   "Quickening",
+   "For #s both heroes recharge abilities #% faster and move #% faster.",
+   "Archmage"
+  ],
+  "meteor": [
+   "Falling Lantern",
+   "Call a burning lantern down from the sky. After #s it hits everything within # yards for <b>#</b>.",
+   "Arcanist"
+  ]
+ },
+ "boons": [
+  [
+   "o_atk",
+   "Whetstone",
+   "Orhun deals #% more damage.",
+   "orhun"
+  ],
+  [
+   "h_atk",
+   "Jade Focus",
+   "Handan's spells and attacks deal #% more damage.",
+   "handan"
+  ],
+  [
+   "o_hp",
+   "Iron Constitution",
+   "Orhun has #% more health.",
+   "orhun"
+  ],
+  [
+   "h_hp",
+   "Warm Hearth",
+   "Handan has #% more health.",
+   "handan"
+  ],
+  [
+   "o_def",
+   "Riveted Plates",
+   "Orhun has #% more armor.",
+   "orhun"
+  ],
+  [
+   "crit",
+   "Keen Eyes",
+   "+#% critical strike chance for both heroes.",
+   "both"
+  ],
+  [
+   "critdmg",
+   "Deadly Precision",
+   "Critical hits deal #% more damage.",
+   "both"
+  ],
+  [
+   "haste",
+   "Quick Hands",
+   "Abilities recharge #% faster.",
+   "both"
+  ],
+  [
+   "regen",
+   "Second Breath",
+   "Both heroes regenerate #% of their health every second during fights.",
+   "both"
+  ],
+  [
+   "leech",
+   "Blood Price",
+   "Orhun heals for #% of the damage he deals.",
+   "orhun"
+  ],
+  [
+   "mana",
+   "Deep Current",
+   "Handan regenerates mana #% faster in fights.",
+   "handan"
+  ],
+  [
+   "rage",
+   "Short Temper",
+   "Orhun builds rage #% faster.",
+   "orhun"
+  ],
+  [
+   "healpow",
+   "Gentle Hands",
+   "Handan's healing is #% stronger.",
+   "handan"
+  ],
+  [
+   "speed",
+   "Light Boots",
+   "Both heroes move #% faster.",
+   "both"
+  ],
+  [
+   "fox",
+   "Lumen's Bond",
+   "Lumen deals #% more damage.",
+   "handan"
+  ],
+  [
+   "gold",
+   "Lucky Coin",
+   "Find #% more gold.",
+   "both"
+  ],
+  [
+   "xpb",
+   "Quick Study",
+   "Gain #% more experience.",
+   "both"
+  ],
+  [
+   "lantern",
+   "Kindled Pendant",
+   "The Lantern gauge fills #% faster.",
+   "both"
+  ],
+  [
+   "draught",
+   "Strong Brew",
+   "Healing Draughts restore #% more.",
+   "both"
+  ],
+  [
+   "aspd",
+   "Battle Rhythm",
+   "Basic attacks are #% faster.",
+   "both"
+  ],
+  [
+   "multibolt",
+   "Splitting Jade",
+   "Jade Bolt fires one more bolt at another enemy.",
+   "handan"
+  ],
+  [
+   "chainatk",
+   "Arcing Bolts",
+   "Handan's basic attacks jump to one more enemy.",
+   "handan"
+  ],
+  [
+   "cleave",
+   "Sweeping Strikes",
+   "Orhun's basic attacks also hit enemies next to the target for #%.",
+   "orhun"
+  ],
+  [
+   "thorns",
+   "Bristling Mail",
+   "Enemies that hit Orhun in melee take #% of the damage back.",
+   "orhun"
+  ],
+  [
+   "wardspike",
+   "Thorned Ward",
+   "Enemies that strike a Jade Ward are burned by it.",
+   "handan"
+  ],
+  [
+   "quakestep",
+   "Aftershock",
+   "Every #th Sunder sends out a shockwave that hits all nearby enemies.",
+   "orhun"
+  ],
+  [
+   "twinmend",
+   "Echoing Light",
+   "Mending Light leaves a glow that heals #% more over #s.",
+   "handan"
+  ],
+  [
+   "lanternlink",
+   "Shared Flame",
+   "Lanternburst also resets every ability cooldown.",
+   "both"
+  ],
+  [
+   "fury",
+   "Unstoppable",
+   "Below #% health Orhun deals #% more damage.",
+   "orhun"
+  ],
+  [
+   "veil",
+   "Starlight Veil",
+   "At the start of every fight both heroes gain a shield worth #% of their health.",
+   "both"
+  ]
+ ],
+ "talents": {
+  "3": {
+   "orhun": [
+    [
+     "thickskin",
+     "Thick Skin",
+     "+20% armor."
+    ],
+    [
+     "keenedge",
+     "Keen Edge",
+     "+8% critical strike chance."
+    ]
+   ],
+   "handan": [
+    [
+     "deepwells",
+     "Deep Wells",
+     "+40% mana regeneration."
+    ],
+    [
+     "sharpjade",
+     "Sharpened Jade",
+     "Jade Bolt deals 15% more damage."
+    ]
+   ]
+  },
+  "5": {
+   "orhun": [
+    [
+     "bloodthirst",
+     "Bloodthirst",
+     "Critical hits heal Orhun for 4% of his max health."
+    ],
+    [
+     "ragengine",
+     "Rage Engine",
+     "Generate 50% more rage."
+    ]
+   ],
+   "handan": [
+    [
+     "bloom",
+     "Verdant Bloom",
+     "Mending Light also heals the other hero for half."
+    ],
+    [
+     "rot",
+     "Creeping Rot",
+     "Wither Hex deals 50% more damage."
+    ]
+   ]
+  },
+  "7": {
+   "orhun": [
+    [
+     "bulwark",
+     "Bulwark",
+     "Ironhide Parry reduces damage by 75% instead of 50%."
+    ],
+    [
+     "cyclone",
+     "Cyclone",
+     "Whirling Blades deals 50% more damage."
+    ]
+   ],
+   "handan": [
+    [
+     "foxbond",
+     "Fox Bond",
+     "Lumen deals double damage and has 50% more health."
+    ],
+    [
+     "thickward",
+     "Thicker Ward",
+     "Jade Ward absorbs 50% more."
+    ]
+   ]
+  },
+  "9": {
+   "orhun": [
+    [
+     "laststand",
+     "Last Stand",
+     "Below 35% health, take 25% less damage."
+    ],
+    [
+     "headsman",
+     "Headsman",
+     "Executioner's Edge cooldown reduced by 4s."
+    ]
+   ],
+   "handan": [
+    [
+     "lanternsoul",
+     "Lantern Soul",
+     "The Lantern gauge fills 50% faster."
+    ],
+    [
+     "wildfire",
+     "Wildfire",
+     "Lanternfire radius increased to 3.5 yards."
+    ]
+   ]
+  },
+  "11": {
+   "orhun": [
+    [
+     "stormblade",
+     "Stormblade",
+     "Sunder also strikes a second nearby enemy for 60% damage."
+    ],
+    [
+     "unbroken",
+     "Unbroken",
+     "Ironhide Parry cooldown reduced by 6s."
+    ]
+   ],
+   "handan": [
+    [
+     "twinbolt",
+     "Twin Bolt",
+     "Jade Bolt fires a second bolt at another nearby enemy for 60% damage."
+    ],
+    [
+     "wellspring",
+     "Wellspring",
+     "Mending Light costs 40% less mana."
+    ]
+   ]
+  },
+  "13": {
+   "orhun": [
+    [
+     "warcry",
+     "War Cry",
+     "Challenging Roar also gives both heroes 15% more damage for 8s."
+    ],
+    [
+     "secondwind",
+     "Second Wind",
+     "Healing Draughts also give Orhun 30 rage and 20% damage reduction for 6s."
+    ]
+   ],
+   "handan": [
+    [
+     "wardburst",
+     "Ward Bloom",
+     "When Jade Ward breaks or ends, it heals its target for 15% of their max health."
+    ],
+    [
+     "lumenfury",
+     "Lumen's Fury",
+     "Lumen's bites chill enemies (30% slower) and heal Handan for 2% of her max health."
+    ]
+   ]
+  },
+  "15": {
+   "orhun": [
+    [
+     "champion",
+     "Lantern Champion",
+     "10% more health and attack."
+    ],
+    [
+     "bladestorm",
+     "Bladestorm",
+     "Whirling Blades strikes twice."
+    ]
+   ],
+   "handan": [
+    [
+     "lanternheart",
+     "Lanternheart",
+     "12% more spell power and 20% more mana."
+    ],
+    [
+     "phoenix",
+     "Phoenix Thread",
+     "Once per fight, when Orhun would fall he is restored to 30% health."
+    ]
+   ]
+  }
+ },
+ "items": {
+  "pre": [
+   [
+    "Worn",
+    "Plain",
+    "Sturdy",
+    "Traveler's"
+   ],
+   [
+    "Fine",
+    "Tempered",
+    "Keen",
+    "Polished"
+   ],
+   [
+    "Lanternforged",
+    "Moonlit",
+    "Emberwrought",
+    "Duskwoven"
+   ],
+   [
+    "Jadeborn",
+    "Dawnbreaker's",
+    "First-Light",
+    "Starfallen"
+   ]
+  ],
+  "orhun": {
+   "weapon": [
+    "Longsword",
+    "Sabre",
+    "Broadblade",
+    "Duelist's Blade"
+   ],
+   "armor": [
+    "Brigandine",
+    "Mail Coat",
+    "Leather Jerkin",
+    "Scale Hauberk"
+   ],
+   "trinket": [
+    "Warband Token",
+    "Iron Signet",
+    "Duelist's Charm",
+    "Oathband",
+    "Wolf-Tooth Pendant"
+   ]
+  },
+  "handan": {
+   "weapon": [
+    "Staff",
+    "Rod",
+    "Willow Stave",
+    "Lantern Staff"
+   ],
+   "armor": [
+    "Robe",
+    "Mantle",
+    "Spellweave Coat",
+    "Night Robe"
+   ],
+   "trinket": [
+    "Jade Charm",
+    "Moonstone Band",
+    "Lantern Locket",
+    "Spellbound Ring",
+    "Starlit Brooch"
+   ]
+  },
+  "any": {
+   "trinket": [
+    "Charm",
+    "Band",
+    "Amulet",
+    "Lantern Token",
+    "Signet"
+   ]
+  },
+  "suf": [
+   " of the Fen",
+   " of Embers",
+   " of Brightfield",
+   " of the Keep",
+   " of Velmara",
+   " of the Ember Road",
+   " of Frostspire",
+   " of the Cold Forge",
+   " of the Emberwood",
+   " of Glasswater",
+   " of the Starwatch",
+   " of the Sunscar Dunes",
+   " of the Thornveil",
+   " of the Cindermaw Caldera",
+   " of the Skyreach Spires",
+   " of the Dawnless Gate"
+  ]
+ },
+ "wprof": {
+  "sword": [
+   "Sword",
+   "Balanced slashes."
+  ],
+  "greataxe": [
+   "Greataxe",
+   "Slow, heavy blows that also hit every enemy next to the target."
+  ],
+  "spear": [
+   "Spear",
+   "Long-reach thrusts that pierce the enemy behind the target."
+  ],
+  "twinblades": [
+   "Twin Blades",
+   "Very fast alternating cuts. +6% critical chance."
+  ],
+  "staff": [
+   "Staff",
+   "Jade bolts."
+  ],
+  "orb": [
+   "Orb",
+   "A slow orb that bursts on impact and hits nearby enemies."
+  ],
+  "wand": [
+   "Wand",
+   "Rapid sparks."
+  ],
+  "tome": [
+   "Tome",
+   "Lightning that jumps to two more enemies."
+  ]
+ },
+ "svw": {
+  "slash": [
+   "Duelist's Edge",
+   "Dawnbreaker",
+   [
+    "Slashes in front of Orhun. #% damage.",
+    "Slashes in front of Orhun and behind him. #% damage.",
+    "Slashes in front of Orhun and behind him, twice. #% damage.",
+    "A golden cross of blades all around Orhun."
+   ]
+  ],
+  "whirl": [
+   "Whirling Blades",
+   "Blade Tempest",
+   [
+    "# blades circle Orhun and cut anything they touch.",
+    "Eight great blades circle Orhun."
+   ]
+  ],
+  "wave": [
+   "Crescent Wave",
+   "",
+   [
+    "Sends # piercing wave at the nearest enemies.",
+    "Sends # piercing waves at the nearest enemies."
+   ]
+  ],
+  "quake": [
+   "Earthsplitter",
+   "Worldbreaker",
+   [
+    "Slams the ground around Orhun for heavy damage and a short stun.",
+    "Shakes the ground twice in a huge ring, stunning everything."
+   ]
+  ],
+  "roar": [
+   "Challenging Roar",
+   "",
+   [
+    "Hurls back every enemy within # yards and weakens them."
+   ]
+  ],
+  "exec": [
+   "Executioner's Edge",
+   "",
+   [
+    "Strikes the toughest enemy nearby for huge damage, doubled below #% health."
+   ]
+  ],
+  "bolt": [
+   "Jade Bolt",
+   "Jade Storm",
+   [
+    "Fires # bolt at different enemies.",
+    "Fires # bolts at different enemies.",
+    "A storm of ten jade bolts every volley."
+   ]
+  ],
+  "chain": [
+   "Chain Lightning",
+   "Storm Crown",
+   [
+    "Lightning leaps between # enemies.",
+    "Lightning leaps between fourteen enemies, twice."
+   ]
+  ],
+  "fire": [
+   "Lanternfire",
+   "Falling Stars",
+   [
+    "Calls down # burning lantern on enemy packs.",
+    "Calls down # burning lanterns on enemy packs.",
+    "Six falling stars every volley."
+   ]
+  ],
+  "nova": [
+   "Frost Nova",
+   "",
+   [
+    "Freezes every enemy within # yards of Handan."
+   ]
+  ],
+  "orbs": [
+   "Jade Orbs",
+   "",
+   [
+    "# jade orbs circle Handan, burning enemies and swallowing enemy shots."
+   ]
+  ],
+  "mend": [
+   "Mending Light",
+   "",
+   [
+    "Heals both heroes for #% of their health.",
+    "Heals both heroes for #% of their health and burns nearby enemies."
+   ]
+  ],
+  "thorn": [
+   "Thornbind",
+   "",
+   [
+    "Thorns burst under # enemy, rooting and cutting everything nearby.",
+    "Thorns burst under # enemies, rooting and cutting everything nearby."
+   ]
+  ]
+ },
+ "svp": {
+  "p_might": [
+   "Whetstone",
+   "+#% damage."
+  ],
+  "p_heart": [
+   "Iron Heart",
+   "+#% max health."
+  ],
+  "p_boots": [
+   "Swift Boots",
+   "+#% move speed."
+  ],
+  "p_magnet": [
+   "Magnet Charm",
+   "+#% pickup range."
+  ],
+  "p_glass": [
+   "Hourglass",
+   "Skills recharge #% faster."
+  ],
+  "p_crown": [
+   "Crown of Insight",
+   "+#% experience."
+  ],
+  "p_echo": [
+   "Echo Stone",
+   "+# bolt, blade, wave or orb for every skill."
+  ],
+  "p_spell": [
+   "Spellbinder",
+   "Orbiting blades and orbs spin #% faster."
+  ],
+  "p_reach": [
+   "Wide Reach",
+   "+#% area for every skill."
+  ],
+  "p_regen": [
+   "Hearthstone",
+   "Regenerate #% health every second."
+  ]
+ },
+ "forge": [
+  [
+   "might",
+   "Might",
+   "+#% damage",
+   "+#% damage"
+  ],
+  [
+   "vital",
+   "Vitality",
+   "+#% max health",
+   "+#% max health"
+  ],
+  [
+   "recov",
+   "Recovery",
+   "Regenerate #% health per second",
+   "Regenerate #% health per second"
+  ],
+  [
+   "swift",
+   "Swiftness",
+   "+#% move speed",
+   "+#% move speed"
+  ],
+  [
+   "magnet",
+   "Magnetism",
+   "+#% pickup range",
+   "+#% pickup range"
+  ],
+  [
+   "growth",
+   "Growth",
+   "+#% experience",
+   "+#% experience"
+  ],
+  [
+   "greed",
+   "Greed",
+   "+#% gold",
+   "+#% gold"
+  ],
+  [
+   "haste",
+   "Haste",
+   "Skills recharge #% faster",
+   "Skills recharge #% faster"
+  ],
+  [
+   "revive",
+   "Second Chance",
+   "Revive once per dream",
+   "Revive once per dream"
+  ],
+  [
+   "reroll",
+   "Insight",
+   "# rerolls of upgrade cards per dream",
+   "# reroll of upgrade cards per dream"
+  ]
+ ],
+ "stages": [
+  [
+   "Brightfield Dreams",
+   "Wolves and thorn sprites under a bruised sky. The gentlest dream."
+  ],
+  [
+   "Murkfen Nightmare",
+   "Lurkers, wisps that spit cold light and spiders in the fog."
+  ],
+  [
+   "The Endless Keep",
+   "Hollow Knights, shade archers and wraiths in halls that never end."
+  ],
+  [
+   "Frostspire Peak",
+   "White wolves, frostcallers and ice giants at the top of the world."
+  ]
+ ],
+ "misc": {
+  "rarity": [
+   "Common",
+   "Uncommon",
+   "Rare",
+   "Epic"
+  ],
+  "hero": {
+   "orhun": "Duelist",
+   "handan": "Loreweaver"
+  },
+  "poses": {
+   "hug": "Hug",
+   "hands": "Hold hands",
+   "sit": "Sit together",
+   "dance": "Dance",
+   "wave": "Wave",
+   "stargaze": "Stargaze"
+  },
+  "spots": {
+   "bench": "Sit on the bench",
+   "picnic": "Have a picnic",
+   "dock": "Sit by the water",
+   "fire": "Warm up by the fire",
+   "dance": "Dance under the lanterns",
+   "scope": "Look at the stars",
+   "flowers": "Pick flowers",
+   "swingtree": "Hug under the old tree"
+  },
+  "menu": [
+   "Bags",
+   "Skills",
+   "Boons",
+   "Quests",
+   "Travel",
+   "Ride Lumen",
+   "Auto-cast",
+   "Wardrobe",
+   "Poses",
+   "Photo mode",
+   "Starlit Glade",
+   "Lantern Dreams",
+   "Sound",
+   "Save",
+   "Language: English",
+   "What's new",
+   "Controls",
+   "Graphics: 3D",
+   "Title screen"
+  ],
+  "acts": [
+   [
+    "Sunscar Dunes",
+    "Beneath the Hollow Sun",
+    "the Sunwell"
+   ],
+   [
+    "Thornveil",
+    "The jungle that bites",
+    "the Verdant Lantern"
+   ],
+   [
+    "Cindermaw Caldera",
+    "Where the Hollow forges its crown",
+    "the Heartforge"
+   ],
+   [
+    "Skyreach Spires",
+    "Islands above the storm",
+    "the Stormlantern"
+   ],
+   [
+    "The Dawnless Gate",
+    "Where the first shadow sleeps",
+    "the Dawn Lantern"
+   ]
+  ]
+ }
+}

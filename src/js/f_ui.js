@@ -506,7 +506,7 @@ function talkTo(n) {
   if (ready) { playDialog([{ who: id, text: ready.done }], () => turnIn(ready)); return; }
   const avail = QUESTS.find(q => q.giver === id && qState(q.id) === 'avail');
   if (avail) {
-    playDialog([{ who: id, text: `<b>${avail.name}</b><br>${avail.text}<br><span style="color:#9a978e;font-size:13px">Reward: ${avail.xp} xp · ${avail.gold}g${avail.item ? ' · ' + RARITY[avail.item].toLowerCase() + ' gear' : ''}${avail.potions ? ' · ' + avail.potions + ' draughts' : ''}</span>`,
+    playDialog([{ who: id, text: `<b>${avail.name}</b><br>${avail.text}<br><span style="color:#9a978e;font-size:13px">Reward: ${avail.xp} xp · ${avail.gold}g${avail.item ? ' · ' + RARITY[avail.item].toLocaleLowerCase(document.documentElement.lang || 'en') + ' gear' : ''}${avail.potions ? ' · ' + avail.potions + ' draughts' : ''}</span>`,
       actions: [{ label: 'Accept', primary: true, fn: () => acceptQuest(avail) }, { label: 'Not now' }].concat(npc.vendor ? [{ label: 'Trade', fn: () => openChar(true) }] : []) }]);
     return;
   }
@@ -534,7 +534,7 @@ function itemTip(it, who) {
     const parts = [['atk', 'Atk'], ['def', 'Armor'], ['hp', 'Health'], ['crit', 'Crit']].map(([k, n]) => { const d = diff(k); if (!d) return ''; const v = k === 'crit' ? (d * 100).toFixed(1) + '%' : d; return `<span class="${d > 0 ? 'g' : 'bd'}">${d > 0 ? '+' : ''}${v} ${n}</span>`; }).filter(Boolean);
     if (parts.length) cmp = `<div class="s" style="margin-top:4px">vs equipped: ${parts.join(' · ')}</div>`;
   }
-  return `<div class="t c${it.rarity}">${it.name}</div><div class="s">${RARITY[it.rarity]} ${it.wtype ? WPROF[it.wtype].name.toLowerCase() : it.slot} · ${owner} · item level ${it.ilvl}</div>${it.wtype ? `<div class="s" style="color:#cfc8b6">${WPROF[it.wtype].desc}</div>` : ''}<div style="margin-top:4px">${lines.join('<br>')}</div>${cmp}<div class="s" style="margin-top:4px">${vendorMode ? 'Click to sell for ' + it.value + 'g' : 'Click to equip'} · sells for ${it.value}g</div>`;
+  return `<div class="t c${it.rarity}">${it.name}</div><div class="s">${RARITY[it.rarity]} ${it.wtype ? WPROF[it.wtype].name.toLocaleLowerCase(document.documentElement.lang || 'en') : it.slot} · ${owner} · item level ${it.ilvl}</div>${it.wtype ? `<div class="s" style="color:#cfc8b6">${WPROF[it.wtype].desc}</div>` : ''}<div style="margin-top:4px">${lines.join('<br>')}</div>${cmp}<div class="s" style="margin-top:4px">${vendorMode ? 'Click to sell for ' + it.value + 'g' : 'Click to equip'} · sells for ${it.value}g</div>`;
 }
 function equipItem(it, who) {
   const key = it.owner === 'any' ? who : it.owner;
@@ -597,7 +597,7 @@ function refreshQuests() {
   const q = QUESTS.find(x => x.id === selQuest);
   w.innerHTML = `<h2>Quest log <button class="x" data-close="winQuests" aria-label="Close">×</button></h2>
     <div class="qlist"><div class="qitems">${known.length ? known.map(k => `<div class="qitem ${G.q[k.id].st === 'done' ? 'done' : ''} ${k.id === selQuest ? 'sel' : ''}" data-q="${k.id}">${k.name}${G.q[k.id].st === 'ready' ? '<span class="st">✓</span>' : ''}</div>`).join('') : '<div style="color:#9a978e">No quests yet. Look for a gold ! above someone\'s head.</div>'}</div>
-    <div class="qdesc">${q ? `<h3>${q.name}</h3><div style="color:#9a978e;font-size:12px;margin-bottom:6px">${NPCS[q.giver].name} · ${q.zone}</div><p>${q.text}</p>${q.obj.map((o, i) => `<div class="o">${G.q[q.id].prog[i] >= o.n ? '✓' : '·'} ${o.label}: ${Math.min(G.q[q.id].prog[i], o.n)}/${o.n}</div>`).join('')}<p style="color:#9a978e">Reward: ${q.xp} xp · ${q.gold}g${q.item ? ' · ' + RARITY[q.item].toLowerCase() + ' gear' : ''}</p>` : ''}</div></div>`;
+    <div class="qdesc">${q ? `<h3>${q.name}</h3><div style="color:#9a978e;font-size:12px;margin-bottom:6px">${NPCS[q.giver].name} · ${q.zone}</div><p>${q.text}</p>${q.obj.map((o, i) => `<div class="o">${G.q[q.id].prog[i] >= o.n ? '✓' : '·'} ${o.label}: ${Math.min(G.q[q.id].prog[i], o.n)}/${o.n}</div>`).join('')}<p style="color:#9a978e">Reward: ${q.xp} xp · ${q.gold}g${q.item ? ' · ' + RARITY[q.item].toLocaleLowerCase(document.documentElement.lang || 'en') + ' gear' : ''}</p>` : ''}</div></div>`;
   w.querySelectorAll('[data-q]').forEach(el => el.addEventListener('click', () => { selQuest = el.dataset.q; refreshQuests(); }));
 }
 
