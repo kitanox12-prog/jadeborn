@@ -43,6 +43,7 @@ function render(dt) {
     else if (p.item === 'ember') { g.fillStyle = 'rgba(160,210,240,.55)'; g.beginPath(); g.moveTo(X - 9, Y + 2); g.lineTo(X - 6, Y - 14 + bob); g.lineTo(X + 7, Y - 16 + bob); g.lineTo(X + 10, Y + 2); g.closePath(); g.fill(); g.fillStyle = '#ff9a3a'; g.shadowColor = '#ffaa44'; g.shadowBlur = 10; g.beginPath(); g.arc(X, Y - 6 + bob, 4, 0, 7); g.fill(); g.shadowBlur = 0; g.fillStyle = '#fff2c0'; g.fillRect(X - 1, Y - 8 + bob, 2, 2); }
     else if (p.item === 'token') { g.fillStyle = '#e0a64e'; g.beginPath(); g.arc(X, Y - 8 + bob, 6, 0, 7); g.fill(); g.fillStyle = '#7a5420'; g.fillRect(X - 2, Y - 11 + bob, 4, 6); g.fillStyle = '#fff2c0'; g.fillRect(X - 1, Y - 10 + bob, 2, 2); }
     else { g.fillStyle = '#46c495'; g.beginPath(); g.moveTo(X, Y - 22 + bob); g.lineTo(X + 7, Y - 8 + bob); g.lineTo(X, Y + 2 + bob); g.lineTo(X - 7, Y - 8 + bob); g.closePath(); g.fill(); g.fillStyle = '#c9f5df'; g.beginPath(); g.moveTo(X, Y - 20 + bob); g.lineTo(X + 3, Y - 9 + bob); g.lineTo(X, Y - 4 + bob); g.closePath(); g.fill(); }
+    textOutlined(g, '!', X, Y - 34 + bob, '#ffd86a', 18);
   }
   // target ring
   const tg = G.target;
@@ -70,6 +71,7 @@ function render(dt) {
   }
   if (z.waystone && waystoneOpen(z.id)) { const X = (z.waystone.x + .5) * TILE, Y = z.waystone.y * TILE; ds.push({ y: Y + 24, f: () => { g.fillStyle = `rgba(125,255,200,${.55 + Math.sin(t * 3) * .25})`; g.fillRect(X - 2, Y - 8, 4, 12); g.fillRect(X - 4, Y - 4, 8, 3); g.fillStyle = 'rgba(125,255,200,.18)'; g.beginPath(); g.ellipse(X, Y + 26, 18, 7, 0, 0, 7); g.fill(); } }); }
   for (const d of z.decor) if (d.type === 'lantern' || d.type === 'brazier' || d.type === 'campfire') { }
+  for (const fn of EXTRA_DRAW) fn(g, t, ds);
   ds.sort((a, b) => a.y - b.y); for (const d of ds) d.f();
 
   // projectiles
@@ -111,6 +113,7 @@ function render(dt) {
   // lighting
   renderLights(g, z, cx, cy, t);
   if (G.mode === 'survivor') svRender2D(g, t, 1);
+  for (const fn of EXTRA_TOP) fn(g, t);
   if (G.coop) for (const hh of heroes()) if (!hh.dead) textOutlined(g, hh.key === 'orhun' ? 'P1' : 'P2', hh.x, hh.y - (G.inCombat ? 66 : 56), hh.key === 'orhun' ? '#e0a64e' : '#46c495', 11);
 
   // NPC quest markers (drawn above darkness)
@@ -541,7 +544,7 @@ function equipItem(it, who) {
   G.equip[key][it.slot] = it;
   recalcStats(); sfx('ui'); refreshCharWin();
 }
-function unequip(key, slot) { const it = G.equip[key][slot]; if (!it) return; if (G.inv.length >= 24) { toast('Bags are full.'); return; } G.equip[key][slot] = null; G.inv.push(it); recalcStats(); refreshCharWin(); }
+function unequip(key, slot) { const it = G.equip[key][slot]; if (!it) return; if (G.inv.length >= 999) { toast('Bags are full.'); return; } G.equip[key][slot] = null; G.inv.push(it); recalcStats(); refreshCharWin(); }
 function openChar(vendor = false) { vendorMode = vendor; $('winChar').hidden = false; refreshCharWin(); }
 function refreshCharWin() {
   const w = $('winChar'); if (w.hidden) return;
@@ -559,7 +562,7 @@ function refreshCharWin() {
     </div><div style="font-size:12px;color:#9a978e;margin-top:6px">Click an item in your bags to sell it.</div></div>` : '';
   w.innerHTML = `<h2>Party &amp; bags <span style="display:flex;gap:10px;align-items:center"><span class="gold">${G.gold}g</span><button class="x" data-close="winChar" aria-label="Close">×</button></span></h2>
     <div class="chargrid">${col('orhun')}${col('handan')}</div>
-    <div class="bag">${Array.from({ length: 24 }, (_, i) => { const it = G.inv[i]; return `<div class="bagslot ${it ? 'r' + it.rarity : ''}" data-bag="${i}">${it ? '<canvas width="36" height="36"></canvas>' : ''}</div>`; }).join('')}</div>
+    <div class="bag">${Array.from({ length: Math.max(24, Math.ceil((G.inv.length + 1) / 8) * 8) }, (_, i) => { const it = G.inv[i]; return `<div class="bagslot ${it ? 'r' + it.rarity : ''}" data-bag="${i}">${it ? '<canvas width="36" height="36"></canvas>' : ''}</div>`; }).join('')}</div>
     <div style="font-size:12px;color:#9a978e;margin-top:6px">${G.potions} Healing Draughts · Trinkets go to the hero you are playing (${HERO[G.ctrl].name}).</div>${stock}`;
   w.querySelectorAll('[data-eq]').forEach(el => {
     const [key, s] = el.dataset.eq.split(':'); const it = G.equip[key][s];
@@ -578,7 +581,7 @@ function refreshCharWin() {
       if (v === 'pot') return buyPotion();
       const it = G.vendorStock[+v]; if (!it) return;
       if (G.gold < it.price) { toast('Not enough gold.'); sfx('deny'); return; }
-      if (G.inv.length >= 24) { toast('Bags are full.'); return; }
+      if (G.inv.length >= 999) { toast('Bags are full.'); return; }
       G.gold -= it.price; G.vendorStock.splice(+v, 1); const { price, ...rest } = it; G.inv.push(rest); sfx('coin'); refreshCharWin();
     });
   });

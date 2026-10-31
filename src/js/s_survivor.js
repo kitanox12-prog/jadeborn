@@ -472,7 +472,7 @@ function svApply(o) {
 }
 function svIconSpec(t, id) {
   if (t === 'p') return { bg: '#1e2a40', fg: '#9fc8ff', s: SVP[id].icon };
-  const def = SVW[id]; return { bg: def.hero === 'orhun' ? '#4a2a14' : '#123a30', fg: def.hero === 'orhun' ? '#ffd9a0' : '#9ff5d0', s: def.icon };
+  const def = SVW[id], sup = id === 'mend'; return { bg: sup ? '#123a2c' : '#4a1a12', fg: sup ? '#8affc8' : '#ffb08a', s: def.icon };
 }
 function svCardHtml(o, i) {
   if (o.kind === 'gold') return `<button class="boonCard" data-c="${i}" style="--rc:#f2c75c"><span class="rar">Gift</span><b>Lantern bread & 25 gold</b><span class="txt">Heals both heroes for 30%.</span></button>`;
@@ -503,6 +503,7 @@ update = function (dt) {
   if (!G.started || SV.over || G.paused || G.dialog) return;
   if (SV.pending > 0) { svOpenLevel(); return; }
   G.t += dt; SV.t += dt;
+  G.gauge = Math.min(100, G.gauge + dt * .3);
   if (SV.later.length) { const due = SV.later.filter(l => l.t <= SV.t); SV.later = SV.later.filter(l => l.t > SV.t); for (const l of due) try { l.fn(); } catch (e) { console.error(e); } }
   G.inCombat = true; G.mounted = false;
   const c = ctrlHero();

@@ -960,6 +960,7 @@ function render(dt) {
   lightsList.sort((a, b) => (b.pri ? 1 : 0) - (a.pri ? 1 : 0) || (Math.hypot(a.x - fx, a.z - fz) - Math.hypot(b.x - fx, b.z - fz)));
   R.pool.forEach((l, i) => { const s = lightsList[i]; if (s && Math.hypot(s.x - fx, s.z - fz) < 30) { l.position.set(s.x, s.y, s.z); l.color.setHex(s.col); l.distance = s.r; l.intensity = s.i; } else l.intensity = 0; });
   if (G.mode === 'survivor' || (typeof SV3 !== 'undefined' && SV3.root)) svRender3D(R, dt, t);
+  for (const fn of EXTRA_3D) fn(R, dt, t);
   regSweep();
   R.renderer.render(R.scene, R.camera);
   drawOverlay(dt, t);
@@ -1087,6 +1088,8 @@ function drawOverlay(dt, t) {
     g.lineWidth = 4; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(m.ch, s.x, s.y);
     g.fillStyle = m.col; g.shadowColor = m.col; g.shadowBlur = 10; g.fillText(m.ch, s.x, s.y); g.shadowBlur = 0;
   }
+  for (const fn of EXTRA_OVERLAY) fn(g, t);
+  for (const pk of G.zone.pickups) { if (G.picked[pk.id] || !pickupActive(pk)) continue; const s = toScreen((pk.x + .5) * TILE, (pk.y + .5) * TILE, 1.45 + Math.sin(t * 3 + pk.x) * .06); if (s.vis) textOutlined(g, '!', s.x, s.y, '#ffd86a', 22); }
   const nb = nearestBeacon();
   if (nb && !G.beacons[nb.id] && G.bossDead[BEACON_BOSS[nb.id]]) { const s = toScreen((nb.x + .5) * TILE, (nb.y + .5) * TILE, 3); textOutlined(g, 'Press E to relight the beacon', s.x, s.y, '#c9f5df', 14); }
   const nn = nearestNpc();

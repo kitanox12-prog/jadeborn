@@ -188,7 +188,8 @@
     if (!G.dialog && G.started) {
       const n = nearestNpc();
       if (n) label = NPCS[n.id].vendor ? 'Talk · Trade' : 'Talk';
-      else { const b = nearestBeacon(); if (b && !G.beacons[b.id] && G.bossDead[{ b1: 'gnarl', b2: 'witch', b3: 'king' }[b.id]]) label = 'Relight'; }
+      else { const b = nearestBeacon(); if (b && !G.beacons[b.id] && G.bossDead[BEACON_BOSS[b.id]]) label = 'Relight'; }
+      if (!label && window.extraUseLabel) label = extraUseLabel() || '';
     }
     if (label !== lastUse) { lastUse = label; use.hidden = !label; use.textContent = label; }
     $('tSwap').style.opacity = otherHero().dead ? .35 : 1;

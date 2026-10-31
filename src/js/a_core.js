@@ -26,6 +26,7 @@ function load(k) { try { const s = localStorage.getItem(k); return s ? JSON.pars
 const cv = $('game'), ctx = cv.getContext('2d');
 const lightCv = document.createElement('canvas'), lctx = lightCv.getContext('2d');
 let W = 0, H = 0, ZOOM = 1, DPR = 1;
+var EXTRA_DRAW = [], EXTRA_TOP = [], EXTRA_3D = [], EXTRA_OVERLAY = [];
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;

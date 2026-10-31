@@ -700,7 +700,7 @@ function rollLoot(f) {
   for (const it of items) giveItem(it);
 }
 function giveItem(it) {
-  if (G.inv.length >= 24) { G.gold += it.value; toast(`Bags full. Sold <span class="c${it.rarity}">${it.name}</span> for ${it.value}g`); return; }
+  if (G.inv.length >= 999) { G.gold += it.value; toast(`Bags full. Sold <span class="c${it.rarity}">${it.name}</span> for ${it.value}g`); return; }
   G.inv.push(it); toast(`Loot: <span class="c${it.rarity}">${it.name}</span>`); sfx('coin');
   refreshCharWin();
 }

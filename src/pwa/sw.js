@@ -14,7 +14,7 @@ self.addEventListener('fetch', e => {
   const page = req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/');
   if (page && url.origin === location.origin) {
     // network first so updates arrive; cache when offline
-    e.respondWith(fetch(req).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return r; })
+    e.respondWith(fetch(req, { cache: 'no-cache' }).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return r; })
       .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('./index.html'))));
     return;
   }
